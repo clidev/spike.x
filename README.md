@@ -1,5 +1,5 @@
 # Sense. React. Visualize.
-Building a set of base components on top of [Vert.x](http://vertx.io/vertx2) for resource-aware applications. Spike.x provides components for monitoring of resources, for filtering and streaming of data, for loading and saving of versioned resources.
+Building a set of base components on top of [Vert.x](http://vertx.io/vertx2) for resource-aware applications. Spike.x provides components for monitoring of resources, for filtering and streaming of data, for loading and saving of versioned files and for many other use cases.
 
 Spike.x can be used out-of-the-box for the following use cases:
 * Filtering, streaming and analysis of events::
