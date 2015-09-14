@@ -11,10 +11,10 @@ Spike.x can be used out-of-the-box for the following use cases:
   * Collect database metrics using custom SQL
   * Query, analyze and present the data with [Kibana](http://www.elasticsearch.org/overview/kibana) or [Grafana](http://grafana.org)
 
-* Monitoring and sending of notifications::
+* Event monitoring and sending of notifications::
   * Monitor key data parameters 
   * Trigger events based on custom rules
-  * Log and send alarms to interested parties
+  * Log and send notifications to interested parties
   * Send alarms only to specific parties after office hours
 
 **CAUTION:** Spike.x 0.9.x is in its infancy. It will take some time before it can be considered production ready.
@@ -25,7 +25,7 @@ Spike.x brings a few concepts of its own to the table. We introduce the followin
 
 An activator is simply a verticle that is responsible for deploying and undeploying of verticles within a module. The activator is the main verticle of a module.
 
-A filter is verticle that receives input, sends output or does both. Spike.x comes with many pre-built filters for many common uses:
+A filter is a verticle that receives input, sends output or does both. Spike.x comes with many filters that can be chained together in many ways. Here's a list of some of the built-in filters:
 
 * Tail - reads lines from a log
 * Mutate - modifies an event
@@ -38,13 +38,13 @@ A filter is verticle that receives input, sends output or does both. Spike.x com
 * Elasticsearh - stores events in Elasticsearch
 * InfluxDB - stores events in InfluxDB 0.9.x
 
-Commands are used to control the behaviour of verticles. We send commands to activators in order to deploy or undeploy filters. These commands are reserved for controlling Spike.x. But you can create your own custom commands.
+Commands are used to control the behaviour of verticles. We send commands to activators in order to deploy or undeploy filters. These commands are reserved for controlling Spike.x. 
 
 Spike.x has a Main class that is responsible for bootstrapping and starting the Vert.x platform. It also takes care of daemonizing Spike.x on platforms that support daemons. Please see the spikex startup script for details.
 
 When you start Spike.x it tries to load any required modules from a local or remote repository. The same mechanism is used to load updated modules. You can of course configure this to suit your needs.
 
-Naturally we do not want to reinvent the wheel. Spike.x depends on many well-established open source libraries. The following are available to any Spike.x based application:
+Naturally we do not want to reinvent the wheel. Spike.x depends on many well-established open source libraries. The following is a list of the core dependencies:
 
 * SLF4J - Simple Logging Facade for Java
 * Logback - SLF4J implementation
