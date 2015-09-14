@@ -1,5 +1,5 @@
 # Sense. React. Visualize.
-Reactive event monitoring and analysis built on top of http://vertx.io[Vert.x] for resource-aware applications.
+Reactive event monitoring and analysis built on top of [Vert.x](http://vertx.io/vertx2) for resource-aware applications.
 Spike.x provides components for resource monitoring, for data filtering and streaming, 
 for sending of notifications, for storing of events in various backends 
 and for many other use cases.
