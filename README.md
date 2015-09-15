@@ -68,4 +68,3 @@ The following platforms are currently supported:
 * Linux 64-bit (Ubuntu, CentOs, RedHat, etc.)
 * Apple OS X 64-bit (Yosemite or newer)
 * FreeBSD 64-bit (FreeBSD 10 and newer)
-* Oracle Solaris 11.x 64-bit
