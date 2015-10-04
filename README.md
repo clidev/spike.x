@@ -1,15 +1,14 @@
 # Sense. React. Visualize.
-Reactive event monitoring and analysis built on top of [Vert.x](http://vertx.io/vertx2) for resource-aware applications.
+Reactive event monitoring and data analysis built on top of [Vert.x](http://vertx.io/vertx2).
 Spike.x provides components for resource monitoring, for data filtering and streaming, 
-for sending of notifications, for storing of events in various backends 
-and for many other use cases.
+for sending of notifications and for storing of metrics and events in various backends.
 
 Spike.x can be used out-of-the-box for the following use cases:
 * Filtering, streaming and analysis of events::
-  * Tail logs and send events to [Elasticsearch](http://www.elasticsearch.org) or [InfluxDB](http://influxdb.com)
-  * Collect CPU, network and memory metrics
+  * Tail logs and send events to [Elasticsearch](https://www.elastic.co) or [InfluxDB](https://influxdb.com/)
+  * Collect JVM, CPU, filesystem and memory metrics
   * Collect database metrics using custom SQL
-  * Query, analyze and present the data with [Kibana](http://www.elasticsearch.org/overview/kibana) or [Grafana](http://grafana.org)
+  * Query, analyze and present the data with [Kibana](https://www.elastic.co/products/kibana) or [Grafana](http://grafana.org)
 
 * Event monitoring and sending of notifications::
   * Monitor key data parameters 
@@ -28,13 +27,12 @@ An activator is simply a verticle that is responsible for deploying and undeploy
 A filter is a verticle that receives input, sends output or does both. Spike.x comes with many filters that can be chained together in many ways. Here's a list of some of the built-in filters:
 
 * Tail - reads lines from a log
-* Mutate - modifies an event
+* Mutate - modifies an event (supports conditional modification)
 * Limit - performs event limiting
 * Grok - matches regexps against an event field
 * Rrd4j - creates RRD graphs
 * HttpServer - receives events via HTTP (supports collectd wtite-http plugin) 
 * Buffer - buffers events before publishing
-* NSQ - published or subscribes to events
 * Elasticsearh - stores events in Elasticsearch
 * InfluxDB - stores events in InfluxDB 0.9.x
 
@@ -42,25 +40,21 @@ Commands are used to control the behaviour of verticles. We send commands to act
 
 Spike.x has a Main class that is responsible for bootstrapping and starting the Vert.x platform. It also takes care of daemonizing Spike.x on platforms that support daemons. Please see the spikex startup script for details.
 
-When you start Spike.x it tries to load any required modules from a local or remote repository. The same mechanism is used to load updated modules. You can of course configure this to suit your needs.
+When you start Spike.x it tries to load any required modules from a local directory or remote repository. The same mechanism can be used to load updated modules. You can of course configure this to suit your needs.
 
-Naturally we do not want to reinvent the wheel. Spike.x depends on many well-established open source libraries. The following is a list of the core dependencies:
+Naturally we do not want to reinvent the wheel. Spike.x depends on many well-established open source libraries. The following is a list some of the core dependencies:
 
 * SLF4J - Simple Logging Facade for Java
 * Logback - SLF4J implementation
 * Guava - Google's core libraries
-* Joda-Time - Java date and time API (also part of Java 8)
 * Bouncy Castle Crypto APIs for Java
-* Kryo - Fast, efficient Java serialization and cloning
 * Hazelcast - Open Source In-Memory Data Grid (part of Vert.x)
-* UUID - an implementation of the UUIDs and GUIDs specification in Java
 * LZ4 Java - LZ4 compression and xxhash hashing for Java
 * SnakeYAML - YAML parser and emitter for Java
-* Boon - Simple opinionated Java for the novice to expert level Java Programmer
 * GS Collections - A supplement or replacement for the Java Collections Framework
 
 # Supported platforms
-Spike.x can be installed on almost any platform that supports JDK 1.8 or newer.
+Spike.x can be installed on many platforms that support JDK 1.8 or newer.
 
 The following platforms are currently supported:
 
