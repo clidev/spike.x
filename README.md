@@ -4,13 +4,13 @@ Spike.x provides components for resource monitoring, for data filtering and stre
 for sending of notifications and for storing of metrics and events in various backends.
 
 Spike.x can be used out-of-the-box for the following use cases:
-* Filtering, streaming and analysis of events::
+* Filtering, streaming and analysis of events:
   * Tail logs and send events to [Elasticsearch](https://www.elastic.co) or [InfluxDB](https://influxdb.com/)
   * Collect JVM, CPU, filesystem and memory metrics
   * Collect database metrics using custom SQL
   * Query, analyze and present the data with [Kibana](https://www.elastic.co/products/kibana) or [Grafana](http://grafana.org)
 
-* Event monitoring and sending of notifications::
+* Event monitoring and sending of notifications:
   * Monitor key data parameters 
   * Trigger events based on custom rules
   * Log and send notifications to interested parties
@@ -52,6 +52,12 @@ Naturally we do not want to reinvent the wheel. Spike.x depends on many well-est
 * LZ4 Java - LZ4 compression and xxhash hashing for Java
 * SnakeYAML - YAML parser and emitter for Java
 * GS Collections - A supplement or replacement for the Java Collections Framework
+
+## Filter chains
+## Metrics
+## Notifier
+
+# Getting started
 
 # Supported platforms
 Spike.x can be installed on many platforms that support JDK 1.8 or newer.
