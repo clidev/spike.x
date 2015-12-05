@@ -42,7 +42,7 @@ Spike.x has a Main class that is responsible for bootstrapping and starting the 
 
 When you start Spike.x it tries to load any required modules from a local deploy directory. 
 
-Spike.x depends on many well-established open source libraries. The following is a list some of the core dependencies:
+Spike.x depends on many well-established open source libraries. The following is a list of some of the core dependencies:
 
 * SLF4J - Simple Logging Facade for Java
 * Logback - SLF4J implementation
