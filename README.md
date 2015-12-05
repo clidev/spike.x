@@ -18,9 +18,9 @@ Spike.x can be used out-of-the-box for the following use cases:
 
 **CAUTION:** Spike.x 0.9.x is in its infancy. It will take some time before it can be considered production ready.
 
-# Concepts
+# Chains and filters
 
-Spike.x brings a few concepts of its own to the table. We introduce the following concepts: activator, filter and command.
+We introduce the following extensions to a verticle: activator and filter.
 
 An activator is simply a verticle that is responsible for deploying and undeploying of verticles within a module. The activator is the main verticle of a module.
 
@@ -36,13 +36,13 @@ A filter is a verticle that receives input, sends output or does both. Spike.x c
 * Elasticsearh - stores events in Elasticsearch
 * InfluxDB - stores events in InfluxDB 0.9.x
 
-Commands are used to control the behaviour of verticles. We send commands to activators in order to deploy or undeploy filters. These commands are reserved for controlling Spike.x. 
+Commands are used to control the behaviour of verticles. We send commands to activators in order to deploy or undeploy filters. These commands are reserved for controlling Spike.x and are an internal detail. 
 
-Spike.x has a Main class that is responsible for bootstrapping and starting the Vert.x platform. It also takes care of daemonizing Spike.x on platforms that support daemons. Please see the spikex startup script for details.
+Spike.x has a Main class that is responsible for bootstrapping and starting the Vert.x platform. It also takes care of daemonizing Spike.x if needed on platforms that support this. Please see the spikex startup script for details.
 
-When you start Spike.x it tries to load any required modules from a local directory or remote repository. The same mechanism can be used to load updated modules. You can of course configure this to suit your needs.
+When you start Spike.x it tries to load any required modules from a local deploy directory. 
 
-Naturally we do not want to reinvent the wheel. Spike.x depends on many well-established open source libraries. The following is a list some of the core dependencies:
+Spike.x depends on many well-established open source libraries. The following is a list some of the core dependencies:
 
 * SLF4J - Simple Logging Facade for Java
 * Logback - SLF4J implementation
@@ -53,11 +53,9 @@ Naturally we do not want to reinvent the wheel. Spike.x depends on many well-est
 * SnakeYAML - YAML parser and emitter for Java
 * GS Collections - A supplement or replacement for the Java Collections Framework
 
-## Filter chains
-## Metrics
-## Notifier
-
 # Getting started
+
+# User guide
 
 # Supported platforms
 Spike.x can be installed on many platforms that support JDK 1.8 or newer.
