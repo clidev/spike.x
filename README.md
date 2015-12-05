@@ -58,7 +58,7 @@ Spike.x depends on many well-established open source libraries. The following is
 # User guide
 
 # Supported platforms
-Spike.x can be installed on many platforms that support JDK 1.8 or newer.
+Spike.x can be installed on almost any platform that supports JDK 1.8 or newer, but some of the filters only support a specific platform.
 
 The following platforms are currently supported:
 
