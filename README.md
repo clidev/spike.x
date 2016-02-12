@@ -5,10 +5,10 @@ for sending of notifications and for storing of metrics and events in various ba
 
 Spike.x can be used out-of-the-box for the following use cases:
 * Filtering, streaming and analysis of events:
-  * Tail logs and send events to [Elasticsearch](https://www.elastic.co) or [InfluxDB](https://influxdb.com/)
+  * Tail logs and send events to [InfluxDB](https://influxdb.com/)
   * Collect JVM, CPU, network, filesystem and memory metrics
   * Collect database metrics using custom SQL
-  * Query, analyze and present the data with [Kibana](https://www.elastic.co/products/kibana) or [Grafana](http://grafana.org)
+  * Query, analyze and present the data with [Grafana](http://grafana.org)
 
 * Event monitoring and sending of notifications:
   * Monitor key data parameters 
@@ -30,17 +30,11 @@ A filter is a verticle that receives input, sends output or does both. Spike.x c
 * Mutate - modifies an event (supports conditional modification)
 * Limit - performs event limiting
 * Grok - matches regexps against an event field
-* Rrd4j - creates RRD graphs
-* HttpServer - receives events via HTTP (supports collectd wtite-http plugin) 
-* Buffer - buffers events before publishing
-* Elasticsearh - stores events in Elasticsearch
-* InfluxDB - stores events in InfluxDB 0.9.x
+* HttpServer - receives events via HTTP (supports collectd write-http plugin) 
+* Batch - creates a batch of events before publishing
+* InfluxDB - stores events in InfluxDB 0.10.x
 
-Commands are used to control the behaviour of verticles. We send commands to activators in order to deploy or undeploy filters. These commands are reserved for controlling Spike.x and are an internal detail. 
-
-Spike.x has a Main class that is responsible for bootstrapping and starting the Vert.x platform. It also takes care of daemonizing Spike.x if needed on platforms that support this. Please see the spikex startup script for details.
-
-When you start Spike.x it tries to load any required modules from a local deploy directory. 
+When you start Spike.x it loads modules from its deploy directory. 
 
 Spike.x depends on many well-established open source libraries. The following is a list of some of the core dependencies:
 
