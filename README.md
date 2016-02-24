@@ -5,7 +5,7 @@ for sending of notifications and for storing of metrics and events in various ba
 
 Spike.x can be used out-of-the-box for the following use cases:
 * Filtering, streaming and analysis of events:
-  * Tail logs and send events to https://www.elastic.co[Elasticsearch] or [InfluxDB](https://influxdb.com/)
+  * Tail logs and send events to [Elasticsearch](https://www.elastic.co) or [InfluxDB](https://influxdb.com/)
   * Collect JVM, CPU, network, filesystem and memory metrics
   * Collect database metrics using custom SQL
   * Query, analyze and present the data with https://www.elastic.co/products/kibana[Kibana] or [Grafana](http://grafana.org)
