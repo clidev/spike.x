@@ -20,7 +20,7 @@ Spike.x can be used out-of-the-box for the following use cases:
 
 # Getting started
 
-You can grab the latest Spike.x installation package from https://bintray.com/spikex/generic/installer/view[Bintray].
+You can grab the latest Spike.x installation package from [Bintray](https://bintray.com/spikex/generic/installer/view).
 
 Simply launch the installer and follow the instructions.
 
