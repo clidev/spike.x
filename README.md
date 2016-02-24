@@ -5,10 +5,10 @@ for sending of notifications and for storing of metrics and events in various ba
 
 Spike.x can be used out-of-the-box for the following use cases:
 * Filtering, streaming and analysis of events:
-  * Tail logs and send events to [InfluxDB](https://influxdb.com/)
+  * Tail logs and send events to https://www.elastic.co[Elasticsearch] or [InfluxDB](https://influxdb.com/)
   * Collect JVM, CPU, network, filesystem and memory metrics
   * Collect database metrics using custom SQL
-  * Query, analyze and present the data with [Grafana](http://grafana.org)
+  * Query, analyze and present the data with https://www.elastic.co/products/kibana[Kibana] or [Grafana](http://grafana.org)
 
 * Event monitoring and sending of notifications:
   * Monitor key data parameters 
@@ -18,13 +18,17 @@ Spike.x can be used out-of-the-box for the following use cases:
 
 **CAUTION:** Spike.x 0.9.x is in its infancy. It will take some time before it can be considered production ready.
 
-# Chains and filters
+# Getting started
 
-We introduce the following extensions to a verticle: activator and filter.
+You can grab the latest Spike.x installation package from https://bintray.com/spikex/generic/installer/view[Bintray].
 
-An activator is simply a verticle that is responsible for deploying and undeploying of verticles within a module. The activator is the main verticle of a module.
+Simply launch the installer and follow the instructions.
 
-A filter is a verticle that receives input, sends output or does both. Spike.x comes with many filters that can be chained together in many ways. Here's a list of some of the built-in filters:
+**IMPORTANT:** The installer requires Java to function and Spike.x requires JDK 1.8 or newer to run.
+
+The main concepts of Spike.x are "chains" and "filters". The filters do the actual work. Chains contain filters that are tied together. You can define many chains, for instance, one chain that receives input from Collectd, another one that receives input from a custom tool and a third one that funnels all the metrics to a log file. Filters communicate using input and output addresses.
+
+Technically a filter is a Vert.x verticle that receives input, sends output or does both. Spike.x comes with many filters that can be chained together in many ways. Here's a list of some of the built-in filters:
 
 * Tail - reads lines from a log
 * Mutate - modifies an event (supports conditional modification)
@@ -32,7 +36,9 @@ A filter is a verticle that receives input, sends output or does both. Spike.x c
 * Grok - matches regexps against an event field
 * HttpServer - receives events via HTTP (supports collectd write-http plugin) 
 * Batch - creates a batch of events before publishing
+* NSQ - publishes or subscribes events to/from NSQ
 * InfluxDB - stores events in InfluxDB 0.10.x
+* Elasticsearch - stores events in Elasticsearch
 
 When you start Spike.x it loads modules from its deploy directory. 
 
@@ -46,8 +52,6 @@ Spike.x depends on many well-established open source libraries. The following is
 * LZ4 Java - LZ4 compression and xxhash hashing for Java
 * SnakeYAML - YAML parser and emitter for Java
 * GS Collections - A supplement or replacement for the Java Collections Framework
-
-# Getting started
 
 # User guide
 
