@@ -1,0 +1,861 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<book xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" lang="en">
+<info>
+<title>Spike.x User Guide</title>
+<date>2016</date>
+<author>
+<personname>
+<firstname>Christoffer</firstname>
+<surname>Lindevall</surname>
+</personname>
+</author>
+<authorinitials>CL</authorinitials>
+<revhistory>
+<revision>
+<revnumber>1.0</revnumber>
+<date>2016</date>
+<authorinitials>CL</authorinitials>
+<revremark>Dawn of the Four-toed hedgehog</revremark>
+</revision>
+</revhistory>
+</info>
+<chapter xml:id="sense-react-visualize">
+<title>Sense. React. Visualize.</title>
+<simpara>Reactive event monitoring and data analysis built on top of <link xlink:href="http://vertx.io/vertx2">Vert.x</link>.</simpara>
+<simpara>Spike.x provides components for resource monitoring, for data filtering and streaming,
+for sending of notifications and for storing of metrics and events in various backends.</simpara>
+<simpara>Spike.x can be used out-of-the-box for the following use cases:</simpara>
+<variablelist>
+<varlistentry>
+<term><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/icons/bar-chart.png"/>
+</imageobject>
+<textobject><phrase>bar-chart</phrase></textobject>
+</inlinemediaobject> Filtering, streaming and analysis of events</term>
+<listitem>
+<itemizedlist>
+<listitem>
+<simpara>Tail logs and send events to <link xlink:href="https://www.elastic.co">Elasticsearch</link> or <link xlink:href="https://influxdata.com">InfluxDB</link></simpara>
+</listitem>
+<listitem>
+<simpara>Collect JVM, CPU, network, filesystem and memory metrics</simpara>
+</listitem>
+<listitem>
+<simpara>Collect database metrics using custom SQL</simpara>
+</listitem>
+<listitem>
+<simpara>Query, analyze and present the data with <link xlink:href="https://www.elastic.co/products/kibana">Kibana</link> or <link xlink:href="http://grafana.org">Grafana</link></simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/icons/bell.png"/>
+</imageobject>
+<textobject><phrase>bell</phrase></textobject>
+</inlinemediaobject> Event monitoring and sending of notifications</term>
+<listitem>
+<itemizedlist>
+<listitem>
+<simpara>Monitor key data parameters</simpara>
+</listitem>
+<listitem>
+<simpara>Trigger events based on custom rules</simpara>
+</listitem>
+<listitem>
+<simpara>Log and send notifications to interested parties</simpara>
+</listitem>
+<listitem>
+<simpara>Rule based sending of alarms</simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</varlistentry>
+</variablelist>
+<caution>
+<simpara>Spike.x 0.9.0 is still in its infancy. It will take some time before it can be
+considered production ready.</simpara>
+</caution>
+<tip>
+<simpara>We are planning to migrate to <link xlink:href="http://vertx.io">Vert.x 3</link> as soon as possible.</simpara>
+</tip>
+</chapter>
+<chapter xml:id="introduction">
+<title>Introduction</title>
+<simpara>Spike.x is built on top of the excellent <link xlink:href="http://vertx.io/vertx2">Vert.x platform</link>. Vert.x
+is one of the many modern actor-like application platforms for the JVM.</simpara>
+<sidebar>
+<title>What is Vert.x?</title>
+<blockquote>
+<attribution>
+http://vertx.io/vertx2/manual.html#what-is-vertx
+</attribution>
+<simpara>Vert.x is a polyglot, non-blocking, event-driven application platform that runs on the JVM.</simpara>
+</blockquote>
+</sidebar>
+<simpara>You do not have to worry about thread synchronization when building applications
+on top of Vert.x. You communicate using messages and you compose your code
+into one or more modules. The verticle is the main actor in Vert.x. These and many
+other concepts are explained in the <link xlink:href="http://vertx.io/vertx2/manual.html">Vert.x documentation</link>.</simpara>
+<simpara>Spike.x brings a few concepts of its own to the table. We introduce the following
+concepts: activator, filter and command.</simpara>
+<simpara>An activator is simply a verticle that is responsible for deploying and undeploying
+verticles within a module. The activator is the main verticle of a module.</simpara>
+<simpara>A filter is a verticle that receives input, sends output or does both. Spike.x
+comes with many filters that can be chained together in various ways. Here&#8217;s a list
+of some of the built-in filters:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>Tail - reads lines from a log</simpara>
+</listitem>
+<listitem>
+<simpara>Mutate - modifies an event</simpara>
+</listitem>
+<listitem>
+<simpara>Limit - performs event limiting</simpara>
+</listitem>
+<listitem>
+<simpara>Grok - matches regexps against an event field</simpara>
+</listitem>
+<listitem>
+<simpara>HttpServer - receives events via HTTP (supports collectd wtite-http plugin and Nagios NRDP)</simpara>
+</listitem>
+<listitem>
+<simpara>Batch - creates a batch of events before publishing</simpara>
+</listitem>
+<listitem>
+<simpara>NSQ - publishes or subscribes events to/from NSQ</simpara>
+</listitem>
+<listitem>
+<simpara>InfluxDB - stores events in InfluxDB 0.10.x or later</simpara>
+</listitem>
+<listitem>
+<simpara>Elasticsearh - stores events in Elasticsearch</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Commands are used to control the behaviour of verticles. We send commands to
+activators in order to deploy and undeploy filters. These commands are an internal
+detail of Spike.x.</simpara>
+<simpara>Spike.x has a Main class that is responsible for bootstrapping and starting
+the Vert.x platform. It also takes care of daemonizing Spike.x if needed on
+platforms that support this. Please see the spikex startup script for details.</simpara>
+<simpara>When you start Spike.x it tries to load any required modules from a local deploy directory.</simpara>
+<simpara>Spike.x depends on many well-established open source libraries. The following is a list
+of some of the core dependencies:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>SLF4J - Simple Logging Facade for Java</simpara>
+</listitem>
+<listitem>
+<simpara>Logback - SLF4J implementation</simpara>
+</listitem>
+<listitem>
+<simpara>Guava - Google&#8217;s core libraries</simpara>
+</listitem>
+<listitem>
+<simpara>Joda-Time - Java date and time API (also part of Java 8)</simpara>
+</listitem>
+<listitem>
+<simpara>Bouncy Castle Crypto APIs for Java</simpara>
+</listitem>
+<listitem>
+<simpara>Hazelcast - Open Source In-Memory Data Grid (part of Vert.x)</simpara>
+</listitem>
+<listitem>
+<simpara>LZ4 Java - LZ4 compression and xxhash hashing for Java</simpara>
+</listitem>
+<listitem>
+<simpara>SnakeYAML - YAML parser and emitter for Java</simpara>
+</listitem>
+<listitem>
+<simpara>GS Collections - A supplement or replacement for the Java Collections Framework</simpara>
+</listitem>
+</itemizedlist>
+<section xml:id="supported-platforms">
+<title>Supported platforms</title>
+<tip>
+<simpara>Spike.x can be installed on almost any platform that supports JDK 1.8 or newer to run. Please note that some of the filters only work on a specific platform.</simpara>
+</tip>
+<simpara>The following platforms are currently supported:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>Windows 64-bit (Windows 7, Windows 2008 Server, etc.)</simpara>
+</listitem>
+<listitem>
+<simpara>Linux 64-bit (Ubuntu, CentOs, RedHat, etc.)</simpara>
+</listitem>
+<listitem>
+<simpara>Apple OS X 64-bit (Yosemite or newer)</simpara>
+</listitem>
+<listitem>
+<simpara>FreeBSD 64-bit (FreeBSD 10 and newer)</simpara>
+</listitem>
+</itemizedlist>
+</section>
+<section xml:id="quick-start">
+<title>Quick start</title>
+<simpara>You can grab the latest Spike.x installation package from <link xlink:href="https://bintray.com/spikex/generic/installer/view">Bintray</link>.</simpara>
+<simpara>Simply launch the installer and follow the instructions.</simpara>
+<important>
+<simpara>The installer requires Java to function and Spike.x requires JDK 1.8 or newer.</simpara>
+</important>
+</section>
+<section xml:id="directories-and-files">
+<title>Directories and files</title>
+<simpara>Spike.x is installed by default in <literal>/var/lib/spikex</literal> or in <literal>C:\Program Files\Spike.x</literal> on Windows.</simpara>
+<simpara>The main configuration file is called <literal>spikex.yaml</literal> and it can be found in the <literal>conf</literal> directory.
+You rarely need to modify this <link xlink:href="http://yaml.org">YAML</link> file. It lists the modules that you want to
+load from the <literal>deploy</literal> directory.</simpara>
+<important>
+<simpara>Be careful not to save broken configuration files since Spike.x reloads saved configuration files automatically.</simpara>
+</important>
+<simpara>Filters are configured using one or more filter configuration files.
+These <link xlink:href="http://yaml.org">YAML</link> files must start with the <literal>filters</literal> prefix and they are also stored in the <literal>conf</literal> directory.</simpara>
+<simpara>Persistent data files are stored in the <literal>data</literal> directory. Whereas temporary data files,
+that can be removed after Spike.x has been stopped, are storde in the <literal>tmp</literal> directory.</simpara>
+<table frame="all" rowsep="1" colsep="1">
+<title>Spike.x directories within the home directory</title>
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="213*"/>
+<colspec colname="col_2" colwidth="213*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Directory</entry>
+<entry align="left" valign="top">Description</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>bin</simpara></entry>
+<entry align="left" valign="top"><simpara>Executables and service files</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>conf</simpara></entry>
+<entry align="left" valign="top"><simpara>Configuration and example files</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>data</simpara></entry>
+<entry align="left" valign="top"><simpara>Persistent data files</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>deploy</simpara></entry>
+<entry align="left" valign="top"><simpara>Deployable modules</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>docs</simpara></entry>
+<entry align="left" valign="top"><simpara>Javadocs and user guide</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>lib</simpara></entry>
+<entry align="left" valign="top"><simpara>Libraries required by Spike.x</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>log</simpara></entry>
+<entry align="left" valign="top"><simpara>Log files</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>tmp</simpara></entry>
+<entry align="left" valign="top"><simpara>Temprary data files</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+</section>
+<section xml:id="wiki-and-issues">
+<title>Wiki and issues</title>
+<simpara>We maintain a small <link xlink:href="https://github.com/clidev/spike.x/wiki">Wiki</link> that you might find useful.
+The latest issues can be found in <link xlink:href="https://github.com/clidev/spike.x/issues">GitHub</link>.</simpara>
+</section>
+<section xml:id="license">
+<title>License</title>
+<simpara>Spike.x is provided under the terms of the <link xlink:href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</link>.</simpara>
+<simpara>We carefully try to select and include only <link xlink:href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</link>
+compliant software with Spike.x.</simpara>
+</section>
+</chapter>
+<chapter xml:id="installation">
+<title>Installation</title>
+<simpara>Spike.x runs on the <link xlink:href="https://en.wikipedia.org/wiki/Java_virtual_machine">Java VM</link>. It requires an adequate amount of memory and CPU resources to run.
+In a typical small scale scenario you would install Spike.x on a dedicated host that is not running a mission critical system.
+Spike.x would receive data from light-weight agents like <link xlink:href="https://collectd.org">collectd</link> and <link xlink:href="https://www.nsclient.org">NSClient++</link>.
+It would then "sanitize" the data and finally send it off to a backend.</simpara>
+<simpara>The minimum system requirements usually depend on the amount of data being processed.
+Typically one CPU and 1 GB of memory should be adequate for most scenarios. The default installation uses the following JVM heap memory settings:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>-Xms64m</simpara>
+</listitem>
+<listitem>
+<simpara>-Xmx256m</simpara>
+</listitem>
+</itemizedlist>
+<simpara>We would advise you to start with the defaults settings and monitor the resource usage of Spike.x using the <link linkend="module-metrics">Metrics</link> module.</simpara>
+<simpara>The latest version of Spike.x is found at <link xlink:href="https://bintray.com/spikex/generic/installer/view">Bintray</link>. The <literal>EXE</literal> installer is for Windows platforms, whereas the <literal>JAR</literal> installer is for all other platforms.
+Please note that Spike.x requires JDK 1.8 or newer. We test Spike.x on the <link xlink:href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Oracle JDK</link> and the <link xlink:href="http://openjdk.java.net">OpenJDK</link>. See the platform instructions below for installation details.</simpara>
+<section xml:id="deployment-models">
+<title>Deployment models</title>
+<simpara>We present InfluxDB and Grafana for storage and visualization in the deployment diagrams below but you could also use
+<link linkend="use-case-elasticsearch-kibana">Elasticsearch and Kibana</link>.</simpara>
+<formalpara>
+<title>Simple deployment diagram</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-deployment-simple.png"/>
+</imageobject>
+<textobject><phrase>spikex-deployment-simple</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<simpara>This deployment could be used if you are testing some software and want to do a minimal installation.
+Nothing prevents you from installing the whole stack in one host if there&#8217;s enough resources.</simpara>
+<formalpara>
+<title>Small-scale deployment diagram</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-deployment-small-scale.png"/>
+</imageobject>
+<textobject><phrase>spikex-deployment-small-scale</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<simpara>This deployment could be used for a production site where you want to keep the monitored data locally on private servers
+and you are not too concerned with scaling out the system.</simpara>
+<formalpara>
+<title>Cloud-based deployment diagram</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-deployment-cloud-based.png"/>
+</imageobject>
+<textobject><phrase>spikex-deployment-cloud-based</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<simpara>This deployment is ideal when you have multiple sites to monitor and you want to centralize the storage and visualization.
+At the time of writing there is at least one <link xlink:href="https://customers.influxdb.com">hosted InfluxDB cloud service</link> that is supported by Spike.x.
+Any service that exposes the InfluxDB HTTP API should work with Spike.x. The setup for this deployment is explained in <link linkend="use-case-influxdb-grafana">the monitoring use case</link>.</simpara>
+</section>
+<section xml:id="spike-x-on-linux-os-x-and-freebsd">
+<title>Spike.x on Linux, OS X and FreeBSD</title>
+<simpara>Download the latest Spike.x <literal>JAR</literal> installer from <link xlink:href="https://bintray.com/spikex/generic/installer/view">Bintray</link>.</simpara>
+<programlisting language="shell" linenumbering="unnumbered">wget https://bintray.com/artifact/download/spikex/generic/spikex-0.9.0-installer.jar</programlisting>
+<programlisting language="shell" linenumbering="unnumbered">curl -O https://bintray.com/artifact/download/spikex/generic/spikex-0.9.0-installer.jar</programlisting>
+<simpara>Run the installer and follow the instructions.</simpara>
+<programlisting language="shell" linenumbering="unnumbered">sudo java -jar spikex-0.9.0-installer.jar</programlisting>
+<simpara>Test that you are able to start Spike.x in the terminal. Spike.x should output that it has deployed all the standard modules successfully.</simpara>
+<programlisting language="shell" linenumbering="unnumbered">cd /var/lib/spikex
+su -c 'bin/spikex' spikex</programlisting>
+<section xml:id="linux">
+<title>Linux</title>
+<simpara>Copy the appropriate service script to <literal>/etc/init.d</literal> or <literal>/etc/systemd/system</literal> depending on your Linux distribution.
+Please refer to the documentation of your distribution.</simpara>
+<simpara>Start the Spike.x service and verify from the Spike.x log that the service started up without problems.</simpara>
+<formalpara>
+<title>CentOS 7 example</title>
+<para>
+<programlisting language="shell" linenumbering="unnumbered">sudo cp bin/spikex.service /etc/systemd/system
+sudo systemctl daemon-reload
+sudo systemctl enable spikex
+sudo systemctl start spikex
+sudo less /var/lib/spikex/log/spikex.log</programlisting>
+</para>
+</formalpara>
+<simpara>Stop the Spike.x service and create your filter configuration in <literal>/var/lib/spikex/conf</literal>.
+You can simply copy an example configuration from <literal>/var/lib/spikex/conf/examples</literal> and edit it to suit your needs.</simpara>
+<simpara>Please see the <xref linkend="simple-monitoring-example"/> to get started. Configuration details can be found in the <link linkend="filters">filters section</link>.</simpara>
+<simpara>Remember to start the Spike.x service again once you have configured your filters and chains.</simpara>
+</section>
+</section>
+<section xml:id="spike-x-on-windows">
+<title>Spike.x on Windows</title>
+<simpara>Download the latest Spike.x <literal>EXE</literal> installer from <link xlink:href="https://bintray.com/spikex/generic/installer/view">Bintray</link>.</simpara>
+<simpara>Launch the installer and follow the instructions.</simpara>
+<formalpara>
+<title>Welcome screen</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-welcome.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-welcome</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<formalpara>
+<title>License agreement</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-license.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-license</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<formalpara>
+<title>Target path</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-target-path.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-target-path</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<formalpara>
+<title>Installation packages</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-packages.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-packages</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<formalpara>
+<title>Summary</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-summary.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-summary</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<formalpara>
+<title>Installation progress</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-progress.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-progress</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<formalpara>
+<title>Setup shortcuts</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-shortcuts.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-shortcuts</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<formalpara>
+<title>Installation finished</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-install-finished.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-install-finished</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<simpara>Verify that the Spike.x was installed successfully as a Windows service.</simpara>
+<formalpara>
+<title>Spike.x service</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/spikex-win-service.png"/>
+</imageobject>
+<textobject><phrase>spikex-win-service</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<simpara>Stop the Spike.x service and create your filter configuration in <literal>C:\Program Files\Spike.x\conf</literal>.
+You can simply copy an example configuration from <literal>C:\Program Files\Spike.x\conf\examples</literal> and edit it to suit your needs.</simpara>
+<simpara>Please see the <xref linkend="simple-monitoring-example"/> to get started. Configuration details can be found in the <link linkend="filters">filters section</link>.</simpara>
+<simpara>Remember to start the Spike.x service again once you have configured your filters and chains.</simpara>
+</section>
+<section xml:id="simple-monitoring-example">
+<title>Simple monitoring example</title>
+<simpara>We start by defining an input filter that sends its data to the events log file. It also sends its output to an address called <literal>metrics.spikex</literal>.</simpara>
+<simpara>Use your favorite text editor and create a file called <literal>filters-metrics-oshi.yaml</literal> in the <literal>conf</literal> directory.</simpara>
+<tip>
+<simpara>the entire <literal>filters-metrics-oshi.yaml</literal> file can be found in the <literal>examples</literal> directory.</simpara>
+</tip>
+<formalpara>
+<title>filters-metrics-oshi.yaml</title>
+<para>
+<screen>modules: [
+    {
+      module: 'io.spikex~spikex-filter',
+      filters: [
+            { alias: 'Metrics', verticle: 'io.spikex.filter.input.Metrics' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'system-metrics-load',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: '60s',
+                    metric-selector: 'system.load',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-cpu',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'system.cpu',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-memory',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'system.memory',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-swap',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 60s,
+                    metric-selector: 'system.swap',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-filesystem',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 60s,
+                    metric-selector: 'filesystem',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'jvm-metrics-spikex',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'jvm',
+                    dsname-prefix: 'spikex',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]</screen>
+</para>
+</formalpara>
+<simpara>Start Spike.x from a terminal or the command prompt and verify that no exceptions are thrown.</simpara>
+<formalpara>
+<title>Linux or OS X terminal</title>
+<para>
+<programlisting language="shell" linenumbering="unnumbered">cd /var/lib/spikex
+su -c "./bin/spikex" spikex</programlisting>
+</para>
+</formalpara>
+<formalpara>
+<title>Windows command prompt as Administrator (assumes that Spike.x was installed on C:)</title>
+<para>
+<programlisting language="shell" linenumbering="unnumbered">cd \Program Files\Spike.x\spikex
+bin\spikex.bat</programlisting>
+</para>
+</formalpara>
+<simpara>Wait until you see from the output that Spike.x has successfully deployed the <literal>io.spikex.filter.input.Metrics</literal>
+and <literal>io.spikex.filter.output.Logback</literal> verticles.</simpara>
+<simpara>You can then let Spike.x run for a while and finally stop it using <literal>Ctrl+d</literal> or <literal>Ctrl+c</literal> on Windows.
+Inspect the <literal>events.log</literal> file that&#8217;s stored in the <literal>log</literal> directory. It should contain lines like these:</simpara>
+<screen>2015-12-06 12:37:50,384 Metrics {"@id":"65f2ab00-9c05-11e5-a3de-080027fe9e8b","@source":"Metrics","@timestamp":1449398270384,"@timezone":"UTC","@type":"metric","@chain":"system-metrics-memory","@priority":"normal","@host":"win7","@dsname":"system.memory","@dstype":"GAUGE","@dsprecision":"s","@subgroup":"used_perc","@instance":"-","@interval":15000,"@value":26.43424368265135,"@tags":["metric","spikex-metric-jvm","oshi"]}
+2015-12-06 12:37:50,384 Metrics {"@id":"65f2ab01-9c05-11e5-a3de-080027fe9e8b","@source":"Metrics","@timestamp":1449398270384,"@timezone":"UTC","@type":"metric","@chain":"system-metrics-cpu","@priority":"normal","@host":"win7","@dsname":"system.cpu","@dstype":"GAUGE","@dsprecision":"s","@subgroup":"load_avg","@instance":"cpu1","@interval":15000,"@value":0.010510910058541777,"@tags":["metric","spikex-metric-jvm","oshi"]}</screen>
+<simpara>Please see the <xref linkend="troubleshooting"/> section if you encounter problems. Usually the <literal>spikex.log</literal> contains the cause of the problem.</simpara>
+</section>
+</chapter>
+<chapter xml:id="modules">
+<title>Modules</title>
+<simpara>Spike.x provides the following standard modules that are always available.</simpara>
+<table frame="all" rowsep="1" colsep="1">
+<title>Standard modules</title>
+<?dbhtml table-width="60%"?>
+<?dbfo table-width="60%"?>
+<?dblatex table-width="60%"?>
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="128*"/>
+<colspec colname="col_2" colwidth="128*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Module</entry>
+<entry align="left" valign="top">Description</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>Core (mod-spikex-core)</simpara></entry>
+<entry align="left" valign="top"><simpara>Base classes and services</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>Filtering (mod-spikex-filter)</simpara></entry>
+<entry align="left" valign="top"><simpara>Data input, filtering and output</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>Metrics (mod-spikex-metrics)</simpara></entry>
+<entry align="left" valign="top"><simpara>Spike.x JVM and system resource information (CPU, memory, disk, JVM heap, etc.)</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>Notifier (mod-spikex-notifier)</simpara></entry>
+<entry align="left" valign="top"><simpara>Storing and sending of notifications</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+<section xml:id="module-core">
+<title>Core</title>
+<simpara>home-path
+base-path
+data-path
+run-path
+var-path?
+log-path
+conf-path</simpara>
+<section xml:id="configuration">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="module-filter">
+<title>Filter</title>
+<section xml:id="configuration-2">
+<title>Configuration</title>
+<simpara>ChainA: filter&#8594;filter&#8594;filter</simpara>
+</section>
+</section>
+<section xml:id="module-metrics">
+<title>Metrics</title>
+<section xml:id="configuration-3">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="module-notifier">
+<title>Notifier</title>
+<section xml:id="configuration-4">
+<title>Configuration</title>
+
+</section>
+</section>
+</chapter>
+<chapter xml:id="filters">
+<title>Filters</title>
+<section xml:id="batch">
+<title>Batch</title>
+<section xml:id="configuration-5">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="command">
+<title>Command</title>
+<section xml:id="configuration-6">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="grok">
+<title>Grok</title>
+<section xml:id="configuration-7">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="limit">
+<title>Limit</title>
+<section xml:id="configuration-8">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="mutate">
+<title>Mutate</title>
+<section xml:id="configuration-9">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="tail">
+<title>Tail</title>
+<section xml:id="configuration-10">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="http">
+<title>Http</title>
+<section xml:id="configuration-11">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="elasticsearch">
+<title>Elasticsearch</title>
+<section xml:id="configuration-12">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="influxdb">
+<title>Influxdb</title>
+<section xml:id="configuration-13">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="nsq">
+<title>NSQ</title>
+<section xml:id="configuration-14">
+<title>Configuration</title>
+
+</section>
+</section>
+<section xml:id="logback">
+<title>Logback</title>
+<section xml:id="configuration-15">
+<title>Configuration</title>
+
+</section>
+</section>
+</chapter>
+<chapter xml:id="out-of-box-use-cases">
+<title>Out-of-box use cases</title>
+<section xml:id="use-case-influxdb-grafana">
+<title>Using InfluxDB and Grafana for monitoring</title>
+<simpara>This use case describes how to monitor system metrics of a Windows host.</simpara>
+<simpara>Start by setting up a <link xlink:href="https://customers.influxdb.com">hosted InfluxDB service</link> provided by <link xlink:href="https://influxdata.com">influxdata</link>. You can use the <literal>Start Trial Now</literal> option to test this use case.</simpara>
+<simpara>Once you have access to the <link xlink:href="https://customers.influxdb.com">hosted service</link> you can <link linkend="spike-x-on-windows">install Spike.x on a Windows host</link>.</simpara>
+<simpara>Start by copying the <literal>filters-metrics-oshi.yaml</literal> and <literal>filters-metrics-influxdb.yaml</literal> example configuration files to the <literal>conf</literal> directory.</simpara>
+<simpara>Set the InfluxDB host, admin account and enable SSL in the <literal>filters-metrics-influxdb.yaml</literal> file:</simpara>
+<programlisting language="shell" linenumbering="unnumbered">...
+nodes: [ 'https://influxdb:e08b1f004b35ddae@pepsifree-gigawatt-16.c.influxdb.com:8086' ],
+admin-user: 'influxdb',
+admin-password: 'e08b1f004b35ddae',
+ssl-enabled: true,
+...</programlisting>
+<simpara>No modifications are needed to the <literal>filters-metrics-oshi.yaml</literal> configuration file.</simpara>
+<simpara>Test that the setup works by starting Spike.x from the command line using Administrator permissions.</simpara>
+<programlisting language="shell" linenumbering="unnumbered">cd \Program Files\Spike.x\spikex
+bin\spikex.bat</programlisting>
+<simpara>Please see the <xref linkend="troubleshooting"/> section if you encounter problems.
+Otherwise login to the hosted Grafana service and setup the Spike.x datasource by simply entering <literal>spikex</literal> in the <literal>Database</literal> field and saving the value.</simpara>
+<formalpara>
+<title>Grafana Spike.x datasource</title>
+<para><inlinemediaobject>
+<imageobject>
+<imagedata fileref="img/influxdb-hosted-grafana-datasource.png"/>
+</imageobject>
+<textobject><phrase>influxdb-hosted-grafana-datasource</phrase></textobject>
+</inlinemediaobject></para>
+</formalpara>
+<section xml:id="linux-freebsd-or-os-x">
+<title>Linux, FreeBSD or OS X</title>
+<simpara>Next you can install <link xlink:href="https://collectd.org">Collectd</link> and configure it to send its data to Spike.x.
+You can choose between the <link xlink:href="https://collectd.org/wiki/index.php/Plugin:Write_HTTP">Write_HTTP</link> or <link xlink:href="https://collectd.org/wiki/index.php/Plugin:Network">Network</link> plugin.</simpara>
+</section>
+<section xml:id="windows">
+<title>Windows</title>
+<simpara>Next you can download and install <link xlink:href="https://www.nsclient.org">NSClient&#43;&#43;</link>.
+Replace the default <literal>nsclient.ini</literal> with the one found in the <literal>examples</literal> directory of Spike.x.
+Restart the <literal>NSClient++</literal> windows service and verify from the <literal>events.log</literal> file that you are receiving measurements.</simpara>
+<simpara>That&#8217;s it. Now you can continue by creating beautiful dashboards in Grafana.</simpara>
+</section>
+</section>
+<section xml:id="use-case-elasticsearch-kibana">
+<title>Using Elasticsearch and Kibana for event analysis</title>
+<simpara>This use case describes how to analyze log events using <link xlink:href="https://www.elastic.co/products/elasticsearch">Elastichsearch</link> and <link xlink:href="https://www.elastic.co/products/kibana">Kibana</link>.
+This can be seen as a form of log shipping where we pre-filter the events to only contain data of interest.</simpara>
+<simpara>Start by setting up a <link xlink:href="https://www.elastic.co/found">hosted Elasticsearch service</link> provided by <link xlink:href="https://www.elastic.co">Elastic</link>. You can use the <literal>Free Trial</literal> option to test this use case.</simpara>
+<simpara>Once you have access to the <link xlink:href="https://www.elastic.co/found">hosted service</link> you can <link linkend="installation">install Spike.x</link> on a host that contains the log file to analyze.</simpara>
+<simpara>Next we&#8217;ll configure Spike.x to send some data to Elasticsearch to verify that the hosted service is working.</simpara>
+</section>
+<section xml:id="monitoring-and-sending-of-notifications">
+<title>Monitoring and sending of notifications</title>
+<simpara>CUPS queue monitoring in Linux
+Process/Service monitoring in Windows</simpara>
+</section>
+</chapter>
+<chapter xml:id="troubleshooting">
+<title>Troubleshooting</title>
+
+</chapter>
+<chapter xml:id="building-spike-x">
+<title>Building Spike.x</title>
+<simpara>Download or clone the sources from <link xlink:href="https://github.com/clidev/spike.x.git">GitHub</link>.</simpara>
+<programlisting language="shell" linenumbering="unnumbered">git clone https://github.com/clidev/spike.x.git
+cd spike.x</programlisting>
+<simpara>List the available gradle projects with <literal>gradlew projects</literal>.</simpara>
+<programlisting language="shell" linenumbering="unnumbered"> ./gradlew projects</programlisting>
+<simpara>List the available gradle tasks with <literal>gradlew tasks</literal>.</simpara>
+<programlisting language="shell" linenumbering="unnumbered"> ./gradlew tasks</programlisting>
+<simpara>Compile, test and build Spike.x with <literal>gradlew clean build</literal>.</simpara>
+<programlisting language="shell" linenumbering="unnumbered"> ./gradlew clean build</programlisting>
+<simpara>Create the installation packages with <literal>gradlew izpack launch4j</literal>. The <literal>launch4j</literal>
+task works in Linux, Windows and OS X.</simpara>
+<programlisting language="shell" linenumbering="unnumbered"> ./gradlew izpack launch4j</programlisting>
+<caution>
+<simpara>Spike.x 0.9.0 and Gradle 1.10 does not support Maven profiles. When
+resolving dependencies you get the following kind of errors:</simpara>
+</caution>
+<screen>FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not resolve all dependencies for configuration ':spikex-core:provided'.
+&gt; Could not resolve ch.qos.logback:logback-classic:1.1.1.
+  Required by:
+      io.spikex:spikex-core:0.9.0
+   &gt; Could not parse POM http://jcenter.bintray.com/ch/qos/logback/logback-classic/1.1.1/logback-classic-1.1.1.pom
+      &gt; Resetting to invalid mark
+   &gt; Could not parse POM http://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.1.1/logback-classic-1.1.1.pom
+      &gt; Resetting to invalid mark
+   &gt; Could not parse POM http://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.1.1/logback-classic-1.1.1.pom
+      &gt; Resetting to invalid mark
+&gt; Could not resolve org.kohsuke:akuma:1.9.
+  Required by:
+      io.spikex:spikex-core:0.9.0
+   &gt; Could not parse POM http://jcenter.bintray.com/org/kohsuke/akuma/1.9/akuma-1.9.pom
+      &gt; Content is not allowed in prolog.
+   &gt; Could not parse POM http://repo1.maven.org/maven2/org/kohsuke/akuma/1.9/akuma-1.9.pom
+      &gt; Content is not allowed in prolog.
+   &gt; Could not parse POM http://repo1.maven.org/maven2/org/kohsuke/akuma/1.9/akuma-1.9.pom
+      &gt; Content is not allowed in prolog.</screen>
+<simpara><?asciidoc-hr?></simpara>
+<simpara>Spike.x - Sense. React. Visualize.</simpara>
+</chapter>
+</book>
