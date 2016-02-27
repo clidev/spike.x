@@ -784,18 +784,10 @@ Otherwise login to the hosted Grafana service and setup the Spike.x datasource b
 <textobject><phrase>influxdb-hosted-grafana-datasource</phrase></textobject>
 </inlinemediaobject></para>
 </formalpara>
-<section xml:id="linux-freebsd-or-os-x">
-<title>Linux, FreeBSD or OS X</title>
-<simpara>Next you can install <link xlink:href="https://collectd.org">Collectd</link> and configure it to send its data to Spike.x.
-You can choose between the <link xlink:href="https://collectd.org/wiki/index.php/Plugin:Write_HTTP">Write_HTTP</link> or <link xlink:href="https://collectd.org/wiki/index.php/Plugin:Network">Network</link> plugin.</simpara>
-</section>
-<section xml:id="windows">
-<title>Windows</title>
-<simpara>Next you can download and install <link xlink:href="https://www.nsclient.org">NSClient&#43;&#43;</link>.
-Replace the default <literal>nsclient.ini</literal> with the one found in the <literal>examples</literal> directory of Spike.x.
+<simpara>You can now download and install <link xlink:href="https://www.nsclient.org">NSClient&#43;&#43;</link>. NSClient&#43;&#43; can be used to send system metrics to Spike.x on Windows.
+Replace the default <literal>nsclient.ini</literal> with the one found in the <literal>examples</literal> directory of Spike.x. Also copy the <literal>filters-metrics-nagios-nrdp.yaml</literal> example configuration file to the <literal>conf</literal> directory.
 Restart the <literal>NSClient++</literal> windows service and verify from the <literal>events.log</literal> file that you are receiving measurements.</simpara>
 <simpara>That&#8217;s it. Now you can continue by creating beautiful dashboards in Grafana.</simpara>
-</section>
 </section>
 <section xml:id="use-case-elasticsearch-kibana">
 <title>Using Elasticsearch and Kibana for event analysis</title>

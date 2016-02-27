@@ -1480,23 +1480,13 @@ Otherwise login to the hosted Grafana service and setup the Spike.x datasource b
 <div class="title">Grafana Spike.x datasource</div>
 <p><span class="image"><img src="img/influxdb-hosted-grafana-datasource.png" alt="influxdb-hosted-grafana-datasource"></span></p>
 </div>
-<div class="sect3">
-<h4 id="linux-freebsd-or-os-x">5.1.1. Linux, FreeBSD or OS X</h4>
 <div class="paragraph">
-<p>Next you can install <a href="https://collectd.org">Collectd</a> and configure it to send its data to Spike.x.
-You can choose between the <a href="https://collectd.org/wiki/index.php/Plugin:Write_HTTP">Write_HTTP</a> or <a href="https://collectd.org/wiki/index.php/Plugin:Network">Network</a> plugin.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="windows">5.1.2. Windows</h4>
-<div class="paragraph">
-<p>Next you can download and install <a href="https://www.nsclient.org">NSClient&#43;&#43;</a>.
-Replace the default <code>nsclient.ini</code> with the one found in the <code>examples</code> directory of Spike.x.
+<p>You can now download and install <a href="https://www.nsclient.org">NSClient&#43;&#43;</a>. NSClient&#43;&#43; can be used to send system metrics to Spike.x on Windows.
+Replace the default <code>nsclient.ini</code> with the one found in the <code>examples</code> directory of Spike.x. Also copy the <code>filters-metrics-nagios-nrdp.yaml</code> example configuration file to the <code>conf</code> directory.
 Restart the <code>NSClient++</code> windows service and verify from the <code>events.log</code> file that you are receiving measurements.</p>
 </div>
 <div class="paragraph">
 <p>That&#8217;s it. Now you can continue by creating beautiful dashboards in Grafana.</p>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -1624,7 +1614,7 @@ Could not resolve all dependencies for configuration ':spikex-core:provided'.
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2016-02-27 21:08:03 EET
+Last updated 2016-02-27 22:06:52 EET
 </div>
 </div>
 </body>
