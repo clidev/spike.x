@@ -53,7 +53,9 @@ Spike.x depends on many well-established open source libraries. The following is
 * SnakeYAML - YAML parser and emitter for Java
 * GS Collections - A supplement or replacement for the Java Collections Framework
 
-# User guide
+# Documentation
+
+* [User Guide](http://www.spikex.io/userguide/userguide-main.html)
 
 # Supported platforms
 Spike.x can be installed on almost any platform that supports JDK 1.8 or newer, but some of the filters only support a specific platform.
