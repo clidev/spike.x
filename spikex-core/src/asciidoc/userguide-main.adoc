@@ -533,13 +533,8 @@ Otherwise login to the hosted Grafana service and setup the Spike.x datasource b
 .Grafana Spike.x datasource
 image:influxdb-hosted-grafana-datasource.png[]
 
-==== Linux, FreeBSD or OS X
-Next you can install https://collectd.org[Collectd] and configure it to send its data to Spike.x.
-You can choose between the https://collectd.org/wiki/index.php/Plugin:Write_HTTP[Write_HTTP] or https://collectd.org/wiki/index.php/Plugin:Network[Network] plugin.
-
-==== Windows
-Next you can download and install https://www.nsclient.org[NSClient&#43;&#43;].
-Replace the default `nsclient.ini` with the one found in the `examples` directory of Spike.x. 
+You can now download and install https://www.nsclient.org[NSClient&#43;&#43;]. NSClient&#43;&#43; can be used to send system metrics to Spike.x on Windows.
+Replace the default `nsclient.ini` with the one found in the `examples` directory of Spike.x. Also copy the `filters-metrics-nagios-nrdp.yaml` example configuration file to the `conf` directory.
 Restart the `NSClient++` windows service and verify from the `events.log` file that you are receiving measurements.
 
 That's it. Now you can continue by creating beautiful dashboards in Grafana.
