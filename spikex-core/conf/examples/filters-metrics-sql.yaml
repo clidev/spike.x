@@ -1,0 +1,53 @@
+# ------------------------------------------------------------------------------
+# Spike.x - receive metrics from an SQL database
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Sql.in', verticle: 'io.spikex.filter.input.Sql' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'input-sql',
+        filters: [
+            {
+                filter: 'Sql.in',
+                worker: true,
+                config: {
+                    update-interval: '60s',
+                    jdbc-url: 'jdbc:oracle:thin:@192.168.56.202:1521:mysid',
+                    user-name: 'george',
+                    user-password: 'secret1234',
+                    bootstrap-file: '%{#spikex.conf}/create-views-oracle.sql',
+                    bootstrap-ignore-errors: true,
+                    hikari-cp: {
+                        max-lifetime: 3600000,
+                    },
+                    queries: [
+                        { 
+                            name: 'test1', 
+                            # Required cols: host, dsname, dstype, value
+                            # Optional cols: timestamp, timezone, subgroup, instance
+                            sql: 'SELECT * FROM perfview'
+                        }
+                    ],
+                    add-tags: [ 'metric', 'spikex-metric', 'oracle' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]

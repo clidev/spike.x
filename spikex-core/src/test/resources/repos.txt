@@ -1,0 +1,5 @@
+# Unix
+mavenLocal:repo
+
+# Windows
+mavenLocal:build/resources/test/repo

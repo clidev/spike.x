@@ -1,0 +1,63 @@
+# ------------------------------------------------------------------------------
+# Spike.x notifier configuration
+# ------------------------------------------------------------------------------
+
+local-address: 'spikex-event'
+dispatcher-interval: 1000
+
+database: {
+    name: 'notif.db',
+    compact-on-startup: true
+}
+
+# Leave out "file:" scheme for URLs that refer to a local file
+templates: [
+    {
+        name: 'email',
+        url: '%{#spikex.conf}/template/email.html'
+    },
+    {
+        name: 'plain',
+        url: '%{#spikex.conf}/template/plain.txt'
+    }
+]    
+
+destinations: 
+    - { name: 'file', addresses: [ '%{#spikex.data}/notifications' ] }
+
+schedules:
+    - { name: 'worktime', cronline: '* 8-15 * * Mon,Tue,Wed,Thu,Fri' }
+    - { name: 'evening', cronline: '* 16-21 * * Mon,Tue,Wed,Thu,Fri Europe/Samara' }
+    - { name: 'anytime', cronline: '* * * * *' }
+
+rules: [
+    {
+        name: 'any-event',
+        match-tags: [ '*' ],
+        template: 'plain',
+        subject: 'Event from %{@source}',
+        destinations: [ 'file' ],
+        schedule: 'anytime'
+    }
+]
+
+email: {
+    smtp-host: 'smtp.mycompany.com',
+    smtp-port: 25,
+    smtp-user: 'john',
+    smtp-password: 'plain127text',
+    smtp-tls: true,
+    use-priorities: false,
+    retry-count: 15,
+    retry-wait-sec: 60,
+    headers: {
+        X-Priority: 2
+    },
+    images: {
+        success-small: '%{#spikex.conf}/template/image/success-small.png',
+        warning-small: '%{#spikex.conf}/template/image/warning-small.png',
+        danger-small: '%{#spikex.conf}/template/image/danger-small.png',
+        spikex-logo: '%{#spikex.conf}/template/image/spikex-logo-48px.png'
+    },
+    from: '%{#host}@mycompany.com'
+}

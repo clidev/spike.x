@@ -1,0 +1,130 @@
+# ------------------------------------------------------------------------------
+# HornetQ configuration
+# ------------------------------------------------------------------------------
+
+global:
+    clustered: false
+    persistence-enabled: true # Set this to false for zero persistence
+    log-delegate-factory-class-name: 'io.spikex.hornetq.Slf4jLogDelegateFactory'
+    large-messages-directory: '%{#spikex.data}/hornetq/large'
+    paging-directory: '%{#spikex.data}/hornetq/paging'
+    min-large-message-size: 12800
+    compress-large-messages: true
+    async-connection-execution-enabled: true
+    persist-delivery-count-before-delivery: false
+    message-expiry-scan-period: 30000
+    message-expiry-thread-priority: 3
+
+flow-control:
+    consumer-window-size: 1048576
+    consumer-max-rate: -1
+    producer-window-size: 10
+    producer-max-rate: -1
+
+queues:
+    - { address: 'core.testQueue', filter: "color='red'", durable: true }
+ 
+address-settings: [
+    { 
+        match: 'core.testQueue', 
+        dead-letter-address: 'core.deadLetterQueue',
+        expiry-address: 'core.expiryQueue',
+        max-delivery-attempts: 3,
+        redelivery-delay-multiplier: 1.0,
+        redelivery-delay: 0,
+        max-redelivery-delay: 0,
+        last-value-queue: false,
+        address-full-policy: 'PAGE',
+        max-size-bytes: -1,
+        page-size-bytes: 10485760,
+        page-max-cache-size: 5,
+        send-to-dla-on-no-route: true,
+        redistribution-delay: 0
+    }
+]
+
+security-settings: [
+    {
+        match: 'core.testQueue',
+        create-durable-queue: [ 'admin' ],
+        delete-durable-queue: [ 'admin' ],
+        create-non-durable-queue: [ 'admin', 'users' ],
+        delete-non-durable-queue: [ 'admin', 'users' ],
+        send: [ 'admin', 'users' ],
+        consume: [ 'admin', 'users' ]
+    }
+]
+
+journal: 
+    bindings-directory: '%{#spikex.data}/hornetq'
+    journal-directory: '%{#spikex.data}/hornetq/journal'
+    create-bindings-dir: true
+    create-journal-dir: true
+    journal-type: 'ASYNCIO'
+    journal-sync-transactional: true
+    journal-sync-non-transactional: true
+    journal-file-size: 10485760
+    journal-min-files: 0
+    journal-max-io: 500
+    journal-buffer-timeout: 500000
+    journal-buffer-size: 501760
+    journal-compact-min-files: 10
+    journal-compact-percentage: 30
+
+connectors: [
+    {
+        name: 'client-connector1',
+        use-nio: true,
+        host: 'zeus1.local.lan',
+        port: 5445,
+        tcp-no-delay: true,
+        tcp-send-buffer-size: 32768,
+        tcp-receive-buffer-size: 32768,
+        batch-delay: 0,
+        direct-deliver: true,
+        nio-remoting-threads: -1,
+        local-address: '192.168.0.12',
+        local-port: 0,
+        ssl-enabled: true,
+        key-store-path: '%{#spikex.data}/spikex-keystore.jks',
+        key-store-password: 'changeit',
+        trust-store-path: '%{#spikex.data}/spikex-truststore.jks',
+        trust-store-password: 'changeit',
+        client-failure-check-period: 30000
+    },
+    {
+        name: 'invm-connector1',
+        factory-class: 'org.hornetq.core.remoting.impl.invm.InVMConnectorFactory',
+        server-id: 0
+    }
+]
+acceptors: [
+    {
+        name: 'acceptor1',
+        use-nio: true,
+        host: 'zeus1.local.lan',
+        port: 5445,
+        protocols: 'CORE,AMQP,HTTP',
+        tcp-no-delay: true,
+        tcp-send-buffer-size: 32768,
+        tcp-receive-buffer-size: 32768,
+        http-client-idle-time: 30000,
+        http-client-idle-scan-period: 60000,
+        http-response-time: 30000,
+        http-server-scan-period: 60000,
+        http-requires-session-id: false,
+        ssl-enabled: true,
+        key-store-path: '%{#spikex.data}/spikex-keystore.jks',
+        key-store-password: 'changeit',
+        trust-store-path: '%{#spikex.data}/spikex-truststore.jks',
+        trust-store-password: 'changeit',
+        need-client-auth: true,
+        enabled-cipher-suites: 'TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_EMPTY_RENEGOTIATION_INFO_SCSV',
+        enabled-protocols: 'TLS'
+    },
+    {
+        name: 'invm-acceptor1',
+        factory-class: 'org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory',
+        server-id: 0
+    }
+]

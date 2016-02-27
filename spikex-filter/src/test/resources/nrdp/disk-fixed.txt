@@ -1,0 +1,9 @@
+<checkresults>
+    <checkresult type="service">
+        <hostname>WSP7</hostname>
+        <servicename>disk_fixed</servicename>
+        <state>0</state>
+        <output>Filesystem: C:\: 32.484GB/59.9GB used, System Reserved: 28.145MB/99.996MB used|'@dsname'=filesystem;'@dstype'=GAUGE;'@instance'=C:\;'@interval'=60000;'@values'=used=32.484GB,free=27.416GB,total=59.9GB;# free'=29437595648b;3215877529;1286351011;0;64317550592 '@dsname'=filesystem;'@dstype'=GAUGE;'@instance'=C:\;'@interval'=60000;'@values'=used=32.484GB,free=27.416GB,total=59.9GB;# free %'=45%;4;1;0;100 '@dsname'=filesystem;'@dstype'=GAUGE;'@instance'=System Reserved;'@interval'=60000;'@values'=used=28.145MB,free=71.852MB,total=99.996MB;# free'=75341824b;5242675;2097070;0;104853504 '@dsname'=filesystem;'@dstype'=GAUGE;'@instance'=System Reserved;'@interval'=60000;'@values'=used=28.145MB,free=71.852MB,total=99.996MB;# free %'=71%;4;1;0;100</output>
+    </checkresult>
+</checkresults>
+&cmd=submitcheck&token=1234secret!

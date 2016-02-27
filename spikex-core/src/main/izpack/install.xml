@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
+<!--
+  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  - Spike.x IzPack 4 installation file
+  - Copyright (c) 2015 NG Modular Oy.
+  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+<installation version="1.0">
+
+    <variables>
+        <variable name="appGroup" value="@{app.group}"/>
+        <variable name="appName" value="@{app.name}"/>
+        <variable name="appTitle" value="@{app.title}"/>
+        <variable name="appSubPath" value="@{app.subpath}"/>
+        <variable name="appVersion" value="@{app.version}"/>
+        <!-- pre-select desktop shortcut checkbox -->
+        <variable name="DesktopShortcutCheckboxEnabled" value="true"/>
+        <variable name="TargetPanel.dir.macosx" value="/Applications/$appSubPath"/>
+        <variable name="TargetPanel.dir.unix" value="/var/lib/$appName"/>
+    </variables>
+
+    <native type="3rdparty" name="COIOSHelper.dll" stage="both">
+        <os family="windows"/>
+    </native>
+    <native type="3rdparty" name="COIOSHelper_x64.dll" stage="both">
+        <os family="windows"/>
+    </native>
+    <native type="izpack" name="ShellLink.dll">
+        <os family="windows"/>
+    </native>
+    <native type="izpack" name="ShellLink_x64.dll">
+        <os family="windows"/>
+    </native>
+
+    <info>
+        <!-- Allow installation using 1.7 -->
+        <javaversion>1.7</javaversion>
+        <!-- Disable check... -->
+        <requiresjdk>no</requiresjdk>
+        <appname>@{app.title}</appname>
+        <appsubpath>@{app.subpath}</appsubpath>
+        <appversion>@{app.version}</appversion>
+        <!--
+        <run-privileged condition="izpack.windowsinstall.vista|izpack.windowsinstall.7"/>
+        -->
+        <writeinstallationinformation>no</writeinstallationinformation>
+    </info>
+
+    <guiprefs width="700" height="520" resizable="no">
+        <modifier key="layoutAnchor" value="CENTER"/>
+        <modifier key="labelGap" value="2"/>
+        <modifier key="useLabelIcons" value="no"/>
+        <modifier key="useHeadingPanel" value="yes"/>
+        <modifier key="headingImageOnLeft" value="yes"/>
+        <modifier key="headingLineCount" value="2"/>
+        <modifier key="headingFontSize" value="1.5"/>
+        <modifier key="fontSize" value="3.5"/>
+        <modifier key="headingBackgroundColor" value="0x00ffffff"/>
+        <modifier key="headingPanelCounter" value="text"/>
+        <modifier key="headingPanelCounterPos" value="inHeading"/>
+    </guiprefs>
+  
+    <locale>
+        <langpack iso3="eng"/>
+    </locale>
+
+    <resources>
+        <res id="Heading.image" src="resources/spikex-header.png"/>
+        <!-- FIXME: parse=yes results in a blank panel -->
+        <res id="HTMLInfoPanel.info" src="resources/README-spikex.html" parse="no"/>
+        <res id="HTMLLicencePanel.licence" src="resources/asl2.html"/>
+        <res id="Win_shortcutSpec.xml" src="resources/winShortcutSpec.xml"/>
+        <res id="shortcutSpec.xml" src="resources/emptyShortcutSpec.xml"/>
+        <res id="customicons.xml" src="resources/customicons.xml"/>
+        <res id="JFrameIcon.png" src="resources/JFrameIcon.png"/>
+    </resources>
+
+    <panels>
+        <!--
+        <panel classname="HelloPanel"/>
+        -->
+        <panel classname="HTMLInfoPanel"/>
+        <panel classname="HTMLLicencePanel"/>
+        <panel classname="TargetPanel"/>
+        <panel classname="PacksPanel"/>
+        <panel classname="SummaryPanel"/>
+        <panel classname="InstallPanel"/>
+        <!--
+        <panel classname="ProcessPanel"/>
+        -->
+        <panel classname="ShortcutPanel"/>
+        <panel classname="FinishPanel"/>
+    </panels>
+
+    <listeners>
+        <listener installer="SummaryLoggerInstallerListener"/>
+        <listener installer="RegistryInstallerListener"
+                  uninstaller="RegistryUninstallerListener">
+            <os family="windows"/>
+        </listener>
+    </listeners>
+
+    <packs>
+        <pack name="Install binaries and documentation" required="yes">
+            <description>Installs binaries and documentation.</description>
+            <fileset 
+                targetdir="$INSTALL_PATH/spikex"
+                dir="spikex-@{app.version}" 
+                override="true">
+                <include name="*/**"/>
+                <exclude name="conf/*"/>
+                <exclude name="bin/spikex.env"/>
+                <exclude name="bin/spikex.xml"/>
+            </fileset>
+            <fileset 
+                targetdir="$INSTALL_PATH/spikex"
+                dir="spikex-@{app.version}" 
+                override="askfalse">
+                <include name="conf/*"/>
+                <include name="bin/spikex.env"/>
+                <include name="bin/spikex.xml"/>
+            </fileset>
+            <executable 
+                targetfile="$INSTALL_PATH/spikex/bin/spikex" 
+                stage="never" keep="true">
+                <os family="mac"/>
+                <os family="unix"/>
+            </executable>
+            <executable 
+                targetfile="$INSTALL_PATH/spikex/bin/spikex.exe" 
+                stage="uninstall" keep="false">
+                <args>
+                    <arg value="uninstall"/>
+                </args>
+                <os family="windows"/>
+            </executable>
+            <!-- Create empty log directory -->
+            <fileset dir="resources" targetdir="$INSTALL_PATH/spikex/log" excludes="**/*"/>
+            <!-- Windows -->
+            <file src="resources/service-reinstall.bat" targetdir="$INSTALL_PATH/spikex/bin" unpack="false" os="windows"/>
+            <file src="resources/uninstall.bat" targetdir="$INSTALL_PATH" unpack="false" os="windows"/>
+            <file src="resources/bin.x86-64/elevate.exe" targetdir="$INSTALL_PATH" unpack="false" os="windows"/>
+            <file src="resources/bin.x86-64/elevate.md5" targetdir="$INSTALL_PATH" unpack="false" os="windows"/>
+            <file src="resources/uninstall.ico" targetdir="$INSTALL_PATH" unpack="false" os="windows"/>
+            <parsable targetfile="$INSTALL_PATH/spikex/bin/service-reinstall.bat" type="at" encoding="UTF-8"> 
+                <os family="windows"/>
+            </parsable>
+            <executable targetfile="$INSTALL_PATH/spikex/bin/service-reinstall.bat" keep="true" stage="postinstall" os="windows"/>
+            <executable targetfile="$INSTALL_PATH/uninstall.bat" keep="true" stage="never" os="windows"/>
+            <executable targetfile="$INSTALL_PATH/elevate.exe" keep="true" stage="never" os="windows"/>
+            <!-- Unix -->
+            <file src="resources/postinstall" targetdir="$INSTALL_PATH" unpack="false">
+                <os family="mac"/>
+                <os family="unix"/>
+            </file>
+            <executable
+                targetfile="$INSTALL_PATH/postinstall" 
+                stage="postinstall" keep="false">
+                <args>
+                    <arg value="$INSTALL_PATH/spikex"/>
+                </args>
+                <os family="mac"/>
+                <os family="unix"/>
+            </executable>
+            <file src="resources/uninstall" targetdir="$INSTALL_PATH" unpack="false">
+                <os family="mac"/>
+                <os family="unix"/>
+            </file>
+            <parsable targetfile="$INSTALL_PATH/uninstall" type="shell" encoding="UTF-8"> 
+                <os family="mac"/>
+                <os family="unix"/>
+            </parsable>
+            <executable targetfile="$INSTALL_PATH/uninstall" keep="true" stage="never">
+                <os family="mac"/>
+                <os family="unix"/>
+            </executable>
+            <executable targetfile="$INSTALL_PATH/uninstall" keep="true" stage="never">
+                <os family="mac"/>
+                <os family="unix"/>
+            </executable>
+        </pack>
+        <pack name="Source code and Javadocs" required="no">
+            <description>Installs source code and API documentation.</description>
+            <file src="spikex-core-@{app.version}-sources.jar" targetdir="$INSTALL_PATH" unpack="false" override="true"/>
+            <file src="spikex-core-@{app.version}-javadoc.jar" targetdir="$INSTALL_PATH" unpack="false" override="true"/>
+        </pack>
+    </packs>
+
+</installation>

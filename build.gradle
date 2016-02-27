@@ -1,0 +1,148 @@
+import java.text.SimpleDateFormat
+import org.gradle.api.artifacts.DependencyResolveDetails
+
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath 'me.champeau.gradle:jbake-gradle-plugin:0.2'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.0'
+        classpath 'net.saliman:gradle-cobertura-plugin:2.2.2'
+        classpath 'de.undercouch:gradle-download-task:0.5'
+        classpath 'com.google.gradle:osdetector-gradle-plugin:1.4.0'
+    }
+}
+
+def versionOverrides = [
+    "org.slf4j:slf4j-api": "1.7.6",
+    "ch.qos.logback:logback-core": "1.1.1",
+    "ch.qos.logback:logback-classic": "1.1.1",
+    "org.bouncycastle:bcprov-jdk15on": "1.51",
+    "org.bouncycastle:bcpkix-jdk15on": "1.51",
+    "com.google.guava:guava": "18.0",
+    "joda-time:joda-time": "2.7",
+    "io.netty:netty-all": "4.0.33.Final",
+    "com.esotericsoftware.kryo:kryo": "2.24.0",
+    "com.hazelcast:hazelcast": "3.5",
+    "io.dropwizard.metrics:metrics-core": "3.1.0",
+    "net.java.dev.jna:jna": "4.2.0",
+    "org.apache.httpcomponents:httpclient-osgi": "4.5.1"
+]
+
+subprojects {
+    
+    apply plugin: "com.google.osdetector"
+    apply plugin: 'org.asciidoctor.gradle.asciidoctor'
+    //    apply plugin: 'org.asciidoctor.convert'
+    apply plugin: 'java'
+    apply plugin: 'cobertura'
+    //    apply plugin: 'pmd'
+    //    apply plugin: 'findbugs'
+
+    sourceCompatibility = '1.7'
+    targetCompatibility = '1.7'
+
+    repositories{
+        mavenCentral()
+    }
+
+    configurations.all {
+
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+ 
+            def overrideVersion = versionOverrides[details.requested.group + ":" + details.requested.name]
+ 
+            if (overrideVersion != null && details.requested.version != overrideVersion) {
+                logger.info "Overriding dependency ${details.requested.group}:${details.requested.name} version ${details.requested.version} --> $overrideVersion"
+                details.useVersion overrideVersion
+            }
+        }
+    }
+    
+    tasks.withType(FindBugs) {
+        reports {
+            xml.enabled = false
+            html.enabled = true
+        }
+    }
+
+    tasks.withType(Compile) {
+        options.encoding = 'UTF-8'
+    }
+        
+    jar {
+        manifest {
+            attributes(
+                "Implementation-Title": "${project.name}",
+                "Implementation-Artifact": "${project.name}-${project.version}.jar",
+                "Implementation-Version": "${project.version}",
+                "Implementation-URL": "https://bitbucket.org/team-spikex/spikex",
+                "Implementation-DocURL": "http://www.spikex.io",
+                "Implementation-Vendor": "NG Modular Oy",
+                "Implementation-License": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+                "Created-By": "gradle-${project.getGradle().getGradleVersion()}, groovy-${GroovySystem.getVersion()}",
+                "Build-Jdk": System.getProperty('java.version'),
+                "Build-Platform": System.getProperty("os.name") 
+                + " " + System.getProperty("os.version") 
+                + " (" + System.getProperty("os.arch") + ")",
+                "Built-By": System.getProperty('user.name'),
+                "Built-Date": new SimpleDateFormat("yyyy-MM-dd").format(new Date()),
+                "Built-Timestamp": new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date())
+            )
+        }
+    }
+    
+    test {        
+        
+        cobertura {
+            coverageFormats = ["xml", "html"]
+        }
+        
+        // Define logging configuration for testing
+        def coreLibDir = "${project.group}~mod-kumu-core~${project.version}/lib"
+        systemProperty 'logback.configurationFile', "${projectDir}/src/test/resources/logback.xml"
+
+        // Use new G1 garbage collector and limit memory size for tests
+        jvmArgs '-XX:+UseG1GC'
+        jvmArgs '-Dcom.zaxxer.nuprocess.enableWindowsCmdArgQuoting=false'
+        minHeapSize = "512m"
+        maxHeapSize = "1024m"        
+    }
+
+}
+
+def configurePom(def pom) {
+    pom.project {
+        name rootProject.name
+        description 'Spike.x - Vert.x modules'
+        inceptionYear '2015'
+        packaging 'jar'
+
+        url 'https://bitbucket.org/team-kumu/kumu'
+
+        developers {
+            developer {
+                id 'cli'
+                name 'Christoffer Lindevall'
+            }
+        }
+
+        scm {
+            url 'https://bitbucket.org/team-kumu/kumu.git'
+        }
+
+        licenses {
+            license {
+                name 'The Apache Software License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution 'repo'
+            }
+        }
+
+        properties {
+            setProperty('project.build.sourceEncoding', 'UTF8')
+        }
+    }
+}

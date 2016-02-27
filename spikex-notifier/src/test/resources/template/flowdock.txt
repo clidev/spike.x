@@ -1,0 +1,7 @@
+{
+    "event": "message",
+    {{#@success}}
+    "content": ":alien: `{{{@location}}}` {{{@title}}}\n{{#escape-json}}{{{@message}}}{{/escape-json}}",
+    "tags": ["success", "{{{@type}}}"]
+    {{/@success}}
+}

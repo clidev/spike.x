@@ -1,0 +1,57 @@
+# ------------------------------------------------------------------------------
+# Spike.x - receive metrics from Jolokia
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Jolokia.in', verticle: 'io.spikex.filter.input.Jolokia' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+﻿chains: [
+    {
+        chain: 'input-jolokia',
+        filters: [
+            {
+                filter: 'Jolokia.in', 
+                worker: true,
+                config: { 
+                    update-interval: '15s',
+                    jolokia-urls: [ 'http://localhost:8080/jolokia-war-1.3.2' ],
+                    fetch-java-lang-mbean-metadata: false,
+                    requests: [
+                        { 
+                            # jmx.java.lang.operatingsystem
+                            # Linux: 'OpenFileDescriptorCount', 'MaxFileDescriptorCount'
+                            mbean: 'java.lang:type=OperatingSystem', 
+                            attributes: [ 'TotalSwapSpaceSize', 'TotalPhysicalMemorySize', 'SystemLoadAverage', 'SystemCpuLoad', 'ProcessCpuTime', 'ProcessCpuLoad', 'FreeSwapSpaceSize', 'FreePhysicalMemorySize', 'CommittedVirtualMemorySize' ]
+                        },
+                        {
+                            # jmx.java.lang.memory
+                            mbean: 'java.lang:type=Memory',
+                            attributes: [ 'NonHeapMemoryUsage', 'HeapMemoryUsage' ]
+                        },
+                        {
+                            # jmx.java.lang.classloading
+                            mbean: 'java.lang:type=ClassLoading',
+                            attributes: [ 'UnloadedClassCount', 'TotalLoadedClassCount', 'LoadedClassCount' ]
+                        }
+                    ],
+                    add-tags: [ 'jmx', 'metric', 'spikex-metric', 'jolokia' ]
+               }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]

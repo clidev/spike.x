@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<configuration scan="true" scanPeriod="30 seconds">
+    
+    <appender name="SPIKEX" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        
+        <file>${logback.logdir}/spikex.log</file>
+        
+        <encoder>
+            <pattern>%date{ISO8601} [%thread] %-5level %logger - %msg%n</pattern>
+        </encoder>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logback.logdir}/spikex-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <MaxHistory>30</MaxHistory>
+            <TimeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <MaxFileSize>40MB</MaxFileSize>
+            </TimeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+
+    </appender>
+        
+    <appender name="SPIKEX-EVENTS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        
+        <file>${logback.logdir}/events.log</file>
+        
+        <encoder>
+            <pattern>%date{ISO8601} %X{event} %msg%n</pattern>
+        </encoder>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logback.logdir}/events-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <MaxHistory>30</MaxHistory>
+            <TimeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <MaxFileSize>40MB</MaxFileSize>
+            </TimeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+
+    </appender>
+
+    <appender name="SPIKEX-ASYNC0" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1000</queueSize>
+        <appender-ref ref="SPIKEX"/>
+    </appender>
+
+    <appender name="SPIKEX-ASYNC1" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1000</queueSize>
+        <appender-ref ref="SPIKEX-EVENTS"/>
+    </appender>
+
+    <logger name="io.spikex.events" level="INFO" additivity="false">
+        <appender-ref ref="SPIKEX-ASYNC1"/>
+    </logger>
+
+    <!-- Suppress Vert.x WindowsFileSystem "POSIX style file permissions are not supported" logging -->
+    <logger name="org.vertx.java.core.file.impl.WindowsFileSystem" level="INFO"/>
+    
+    <root level="INFO">
+        <appender-ref ref="SPIKEX-ASYNC0"/>
+    </root>
+
+</configuration>

@@ -1,0 +1,9 @@
+<checkresults>
+    <checkresult type="service">
+        <hostname>WSP7</hostname>
+        <servicename>load_total</servicename>
+        <state>0</state>
+        <output>High system load: 15m: 3%, 5m: 0%, 1m: 0%|'@dsname'=system.load;'@dstype'=GAUGE;'@subgroup'=15m_avg_perc;'@instance'=total;'@interval'=60000;'@value'=3;#'=3%;85;90 '@dsname'=system.load;'@dstype'=GAUGE;'@subgroup'=5m_avg_perc;'@instance'=total;'@interval'=60000;'@value'=0;#'=0%;85;90 '@dsname'=system.load;'@dstype'=GAUGE;'@subgroup'=1m_avg_perc;'@instance'=total;'@interval'=60000;'@value'=0;#'=0%;85;90</output>
+    </checkresult>
+</checkresults>
+&cmd=submitcheck&token=1234secret!

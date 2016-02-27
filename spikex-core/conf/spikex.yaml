@@ -1,0 +1,7 @@
+# ------------------------------------------------------------------------------
+# Spike.x main configuration
+# ------------------------------------------------------------------------------
+
+modules:
+    - { id: io.spikex~spikex-filter~0.9.0 }
+    - { id: io.spikex~spikex-metrics~0.9.0, config: { update-interval: 15000 }}

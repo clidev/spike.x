@@ -1,0 +1,316 @@
+import de.undercouch.gradle.tasks.download.Download
+import org.apache.tools.ant.taskdefs.condition.Os
+
+apply from: "gradle/vertx.gradle"
+//apply plugin: 'izpack'
+
+def tcnative_suffix = osdetector.classifier;
+// Fedora variants use a different soname for OpenSSL than other linux distributions
+// (see http://netty.io/wiki/forked-tomcat-native.html).
+if (osdetector.os == "linux" && osdetector.release.isLike("fedora")) {
+    tcnative_suffix += "-fedora";
+}
+
+dependencies {
+
+    //
+    // Part of Vert.x
+    //
+    provided "com.hazelcast:hazelcast:3.5"
+    
+    //
+    // These are part of the Spike.x base installation (available to any module)
+    //
+    provided "args4j:args4j:2.0.29"
+    provided "org.slf4j:slf4j-api:1.7.12"
+    provided "org.slf4j:log4j-over-slf4j:1.7.12"
+    provided "javassist:javassist:3.12.1.GA"
+    provided "ch.qos.logback:logback-core:1.1.3"
+    provided "ch.qos.logback:logback-classic:1.1.3"
+    provided "org.kohsuke:akuma:1.9"
+    provided "org.bouncycastle:bcprov-jdk15on:1.52"
+    provided "org.bouncycastle:bcpkix-jdk15on:1.52"
+    provided "com.goldmansachs:gs-collections-api:6.2.0"
+    provided "com.goldmansachs:gs-collections:6.2.0"
+    provided "io.netty:netty-all:4.0.33.Final"
+//    provided "io.netty:netty-tcnative:1.1.33.Fork10:" + tcnative_suffix
+    provided "io.netty:netty-tcnative:1.1.33.Fork10:windows-x86_64"
+    provided "io.netty:netty-tcnative:1.1.33.Fork10:osx-x86_64"
+    provided "io.netty:netty-tcnative:1.1.33.Fork10:linux-x86_64"
+    provided "io.netty:netty-tcnative:1.1.33.Fork10:linux-x86_64-fedora"
+
+    //
+    // Core dependencies (available to any module)
+    //
+    compile "com.github.stephenc.eaio-uuid:uuid:3.3.0"
+    compile "com.google.guava:guava:18.0"
+    compile "joda-time:joda-time:2.7"
+    compile "com.esotericsoftware.kryo:kryo:2.24.0"
+    compile "dk.brics.automaton:automaton:1.11-8"
+    compile "net.jpountz.lz4:lz4:1.2.0"
+    compile "org.yaml:snakeyaml:1.14"
+    compile "net.java.dev.jna:jna:4.2.0"
+    compile files('lib/nuprocess-1.0.4-SNAPSHOT.jar')
+
+    // MainTest
+    testCompile "io.vertx:vertx-hazelcast:${vertxVersion}"
+    testCompile "org.bouncycastle:bcprov-jdk15on:1.51"
+    testCompile "org.bouncycastle:bcpkix-jdk15on:1.51"
+    testCompile "commons-io:commons-io:2.4"
+
+    //    izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.4'
+    //    izpack 'org.codehaus.izpack:izpack-ant:5.0.0-rc4'
+}
+
+sourceSets {
+    test {
+        runtimeClasspath = files("${buildDir}/resources/test") + runtimeClasspath      
+    }
+}
+
+test {
+    jvmArgs "-Dvertx.mods=${buildDir}/mods"
+    jvmArgs '-Dvertx.clusterManagerFactory=org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory'
+    jvmArgs '-Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory'
+    //    include '**/unit/StringToken*'
+}
+
+asciidoctor {
+    outputDir = new File("${buildDir}/docs/asciidoc")
+    logDocuments = true    
+    backends = [ 'html5', 'docbook' ]
+    options = [
+        doctype: 'book',
+        attributes: [
+            'source-highlighter' : 'coderay',
+            'toc'                : 'right',
+            'toc-title'          : 'Spike.x',
+            'idprefix'           : '',
+            'idseparator'        : '-',
+            'imagesdir'          : 'img'
+        ]
+    ]
+}
+
+task publishUserguide(type: GradleBuild) {
+    buildFile = 'publish.gradle'
+    tasks = ['publishGhPages']
+}
+
+// Download Vert.x distribution
+task downloadVertx(type: Download) {
+    src "http://dl.bintray.com/vertx/downloads/vert.x-${vertxVersion}.zip"
+    dest buildDir
+    onlyIfNewer true
+}
+
+// Download filter, notifier and metrics modules
+task downloadFilterMod(type: Download) {
+    src "http://dl.bintray.com/spikex/maven/spikex-filter-${project.version}.zip"
+    dest buildDir
+    onlyIfNewer true
+}
+task downloadNotifierMod(type: Download) {
+    src "http://dl.bintray.com/spikex/maven/spikex-notifier-${project.version}.zip"
+    dest buildDir
+    onlyIfNewer true
+}
+
+task downloadMetricsMod(type: Download) {
+    src "http://dl.bintray.com/spikex/maven/spikex-metrics-${project.version}.zip"
+    dest buildDir
+    onlyIfNewer true
+}
+
+// Unzip Vert.x distribution
+task unzipVertx(type: Copy, dependsOn: 'downloadVertx') {
+    def zipFile = file("${buildDir}/vert.x-${vertxVersion}.zip")
+    def outputDir = file("${buildDir}/dist")
+    from zipTree(zipFile)
+    exclude "**/netty-all-*.jar"
+    into outputDir
+}
+
+// Copy filter, notifier and metrics module
+task copyFilterMod(type: Copy, dependsOn: 'downloadFilterMod') {
+    def zipFile = file("${buildDir}/spikex-filter-${project.version}.zip")
+    def outputDir = file("${buildDir}/dist/vert.x-${vertxVersion}/deploy")
+    from(zipFile)
+    into outputDir
+}
+
+task copyNotifierMod(type: Copy, dependsOn: 'downloadNotifierMod') {
+    def zipFile = file("${buildDir}/spikex-notifier-${project.version}.zip")
+    def outputDir = file("${buildDir}/dist/vert.x-${vertxVersion}/deploy")
+    from(zipFile)
+    into outputDir
+}
+
+task copyMetricsMod(type: Copy, dependsOn: 'downloadMetricsMod') {
+    def zipFile = file("${buildDir}/spikex-metrics-${project.version}.zip")
+    def outputDir = file("${buildDir}/dist/vert.x-${vertxVersion}/deploy")
+    from(zipFile)
+    into outputDir
+}
+
+// Copy bin files to distribution
+task copyBinFiles(type: Copy, dependsOn: 'unzipVertx') {
+    def outputDir = file("${buildDir}/dist/vert.x-${vertxVersion}/bin")
+    from("${projectDir}/bin")
+    into(outputDir)
+}
+
+// Copy config files to distribution
+task copyConfigFiles(type: Copy, dependsOn: 'unzipVertx') {
+    def outputDir = file("${buildDir}/dist/vert.x-${vertxVersion}/conf")
+    from("${projectDir}/conf")
+    into(outputDir)
+}
+
+// Copy doc files to distribution
+task copyDocFiles(type: Copy, dependsOn: [ 'javadoc', 'asciidoctor' ]) {
+    def inputDir = file("${buildDir}/docs")
+    def outputDir = file("${buildDir}/dist/vert.x-${vertxVersion}/docs")
+    from(inputDir)
+    into(outputDir)
+}
+
+// Copy base dependencies to distribution
+task copyBaseLibs(type: Copy, dependsOn: 'unzipVertx') {
+    def outputDir = file("${buildDir}/dist/vert.x-${vertxVersion}/lib")
+    from configurations.provided
+    from configurations.compile
+    from file("${buildDir}/libs/spikex-core-${project.version}.jar")
+    into(outputDir)
+}
+
+task distZip(type: Zip, 
+    dependsOn: [ \
+        'assemble', \
+        'unzipVertx', \
+        'copyFilterMod', \
+        'copyNotifierMod', \
+        'copyMetricsMod', \
+        'copyBinFiles', \
+        'copyDocFiles', \
+        'copyConfigFiles', \
+        'copyBaseLibs' ]) {
+    
+    description 'Creates the binary distribution package (zipped)'
+    def inputDir = file("${buildDir}/dist/vert.x-${vertxVersion}")
+    def outputDir = file("${buildDir}/dist")
+    destinationDir(outputDir)
+    archiveName "spikex-${project.version}.zip"
+    from(inputDir)
+    into("spikex-${project.version}")
+}
+
+task distTar(type: Tar, 
+    dependsOn: [ \
+        'assemble', \
+        'unzipVertx', \
+        'copyFilterMod', \
+        'copyNotifierMod', \
+        'copyMetricsMod', \
+        'copyBinFiles', \
+        'copyDocFiles', \
+        'copyConfigFiles', \
+        'copyBaseLibs' ]) {
+    
+    description 'Creates the binary distribution package (gzipped)'
+    def inputDir = file("${buildDir}/dist/vert.x-${vertxVersion}")
+    def outputDir = file("${buildDir}/dist")
+    destinationDir(outputDir)
+    archiveName "spikex-${project.version}.tar.gz"
+    from(inputDir)
+    into("spikex-${project.version}")
+    compression Compression.GZIP
+}
+
+task prepareIzpack(type: Copy, dependsOn: ['distZip']) {
+    description 'Prepares files for the binary installer'
+    def outputDir = file("${buildDir}/assemble/izpack")
+    from("${buildDir}/dist/vert.x-${vertxVersion}") {
+        into "spikex-${project.version}"
+    }
+    from("${buildDir}/libs") {
+        include "spikex-core-${project.version}-*.jar"
+    }
+    from('src/main/izpack/resources') {
+        into 'resources'
+    }
+    into(outputDir)
+}
+
+task izpack(dependsOn: [prepareIzpack]) {
+    description = "Creates an IzPack based installer for both binary and source distributions."
+    inputs.dir("${buildDir}/assemble/izpack" as File)
+    outputs.files "${buildDir}/dist/spikex-${version}-installer.jar"
+
+    doLast {
+        ant.taskdef(name: 'izpack',
+            classpath: fileTree(dir: file('src/main/izpack/lib'), includes: ['*.jar']).asPath,
+            classname: 'com.izforge.izpack.ant.IzPackTask')
+    
+        ant.property(name: 'app.group',   value: 'Spike.x')
+        ant.property(name: 'app.name',    value: 'spikex')
+        ant.property(name: 'app.title',   value: 'Spike.x')
+        ant.property(name: 'app.version', value: version)
+        ant.property(name: 'app.subpath', value: "Spike.x")
+    
+        ant.izpack(basedir: "${buildDir}/assemble/izpack",
+            output: "${buildDir}/dist/spikex-${version}-installer.jar",
+            compression: 'deflate',
+            compressionlevel: '9') {
+            config(file('src/main/izpack/install.xml').text)
+        }
+    }
+
+    //
+    // Requires 32-bit libs on Linux
+    // yum -y install glibc.i686
+    // apt-get install ia32-libs
+    task launch4j(dependsOn: [izpack]) {
+        description = "Creates a setup binary for windows."
+        inputs.dir("${buildDir}/dist" as File)
+        outputs.files "${buildDir}/dist/spikex-${version}-installer.exe"
+
+        def launch4jHome = 'tool/launch4j-linux'
+        if(Os.isFamily(Os.FAMILY_WINDOWS)) {
+            launch4jHome = 'tool/launch4j-win32'
+        } 
+        if(Os.isFamily(Os.FAMILY_MAC)) {
+            launch4jHome = 'tool/launch4j-osx'
+        } 
+        
+        doLast {
+            ant.taskdef(name: 'launch4j',
+                classpath: "${launch4jHome}/launch4j.jar:${launch4jHome}/lib/xstream.jar",
+                classname: 'net.sf.launch4j.ant.Launch4jTask')
+    
+            ant.launch4j() {
+                config(headerType: "gui",
+                    outfile: "${buildDir}/dist/spikex-${version}-installer.exe",
+                    icon: "bin/spikex.ico",
+                    dontWrapJar: "false", 
+                    manifest: "${buildDir}/resources/main/spikex-0.9.0-installer.manifest",
+                    jar: "${buildDir}/dist/spikex-${version}-installer.jar") {
+                    jre(minVersion: "1.7.0", 
+                        jdkPreference: 'preferJdk')
+                    versionInfo(
+                        fileVersion: "${version}.0", 
+                        productVersion: "${version}.0", 
+                        txtFileVersion: "${version}",
+                        txtProductVersion: "${version}",
+                        fileDescription: "Spike.x - Sense. React. Visualize.",
+                        productName: "Spike.x",
+                        copyright: "Copyright (c) 2015 NG Modular Oy",
+                        companyName: "NG Modular Oy",
+                        internalName: "spikex-${version}",
+                        originalFilename: "spikex-${version}-installer.exe"
+                        )
+                }
+            }
+        }
+    }
+}

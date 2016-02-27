@@ -1,0 +1,29 @@
+{{#@success}}
+=================
+==== SUCCESS ====
+=================
+{{/@success}}
+{{#@warning}}
+=================
+==== WARNING ====
+=================
+{{/@warning}}
+{{#@danger}}
+=================
+==== DANGER! ====
+=================
+{{/@danger}}
+
+Event information:
+------------------
+Source: {{@source}}
+Location: {{@location}}
+Timestamp: {{@timestamp}}
+Type: {{@type}}
+Priority: {{@priority}}
+Tags: {{@tags}}
+UUID: {{@id}}
+
+Event details:
+--------------
+{{@message}}

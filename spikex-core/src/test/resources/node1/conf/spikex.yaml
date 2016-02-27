@@ -1,0 +1,7 @@
+# ------------------------------------------------------------------------------
+# Spike.x main configuration
+# ------------------------------------------------------------------------------
+
+modules:
+    - { id: io.spikex~spikex-test2~0.5.0, instances: 3 }
+    - { id: io.spikex~spikex-test1~0.8.0, config: { update-interval: 500 }}

@@ -1,0 +1,83 @@
+# ------------------------------------------------------------------------------
+# Spike.x - receive metrics from Nagios NRDP
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Http.in', verticle: 'io.spikex.filter.input.HttpServer' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'input-nagios-nrdp',
+        filters: [
+            {
+                filter: 'Http.in',
+                config: {
+                    host: 'localhost',
+                    port: 44120,
+                    input-format: 'nagios-nrdp',
+                    nrdp-config: {
+                        accepted-tokens: [ '1234secret!' ],
+                        event-tags: [ 'spikex-event' ],
+                        metric-tags: [ 'spikex-metric' ],
+                        fix-units: true,
+                        services: [
+                            {
+                                name: 'files_count', # subgroup
+                                type: 'metric',
+                                dsname: 'filesystem',
+                                dstype: 'GAUGE'
+                            },
+                            {
+                                name: 'files_old',
+                                type: 'event',
+                                ignore-states: [ 'OK', 'UNKNOWN' ],
+                                prefix-warning: '[Alert] Some old files found',
+                                prefix-critical: '[Alert] Some old files found'
+                            },
+                            {
+                                name: 'logfile_test',
+                                type: 'event',
+                                prefix-info: '[Info] Nothing has been written to test log file for a while',
+                                prefix-warning: '[Alert] Errors found in test log',
+                                prefix-critical: '[Alert] Errors found in test log',
+                                dsname: 'logfile',
+                                dstype: 'GAUGE',
+                                group-fields: [ '@instance', '@value' ],
+                                output-patterns: [ 
+                                    # filename and count
+                                    '([^\s]+):\s([0-9]+)'
+                                ]
+                            },
+                            {
+                                name: '*',
+                                ignore-states: [ 'OK' ],
+                                output-patterns: [ 
+                                    # grp1: field
+                                    # grp2: value
+                                    # grp3: end-of-event indicator (any non-empty string)
+                                    '(?:['']([^'']+)[''])=([^;]*)(;#)?'
+                                ]
+                            }
+                        ],
+                    },
+                    add-tags: [ 'nagios' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]

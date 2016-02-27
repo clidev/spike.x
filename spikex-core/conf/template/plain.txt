@@ -1,0 +1,34 @@
+{{#@alert-success}}
+=================
+==== SUCCESS ====
+=================
+{{/@alert-success}}
+{{#@alert-warning}}
+=================
+==== WARNING ====
+=================
+{{/@alert-warning}}
+{{#@alert-danger}}
+=================
+==== DANGER! ====
+=================
+{{/@alert-danger}}
+
+Event information:
+------------------
+Source: {{@source}}
+Location: {{@location}}
+Timestamp: {{@timestamp}}
+Type: {{@type}}
+Priority: {{@priority}}
+Tags: {{@tags}}
+UUID: {{@id}}
+
+Event details:
+--------------
+CPU total: {{cpu.total}}
+I/O total: {{io.total}}
+Mem free: {{mem.free}}
+JVM mem use: {{mem.jvm.use}}
+
+{{@message}}

@@ -1,0 +1,77 @@
+# ------------------------------------------------------------------------------
+# Spike.x - example filter configuration (one file)
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Command', verticle: 'io.spikex.filter.Command' },
+            { alias: 'Tail', verticle: 'io.spikex.filter.input.TailFile' },
+            { alias: 'Mutate', verticle: 'io.spikex.filter.Mutate' },
+            { alias: 'Limit', verticle: 'io.spikex.filter.Limit' },
+            { alias: 'Grok', verticle: 'io.spikex.filter.Grok' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' },
+            { alias: 'Http.in', verticle: 'io.spikex.filter.input.HttpServer' },
+            { alias: 'Nsq.in', verticle: 'io.spikex.filter.input.Nsq' },
+            { alias: 'Sql.in', verticle: 'io.spikex.filter.input.Sql' },
+            { alias: 'Nsq.out', verticle: 'io.spikex.filter.output.Nsq' },
+            { alias: 'Es.out', verticle: 'io.spikex.filter.output.Elasticsearch' },
+            { alias: 'InfluxDB.out', verticle: 'io.spikex.filter.output.InfluxDb' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'system',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'system.load',
+                    add-fields: { 
+                        interval: 15,
+                        plugin: 'load',
+                        type: '%{metric-subgroup}', # the parts after system.load until the '#' character
+                        instance: 'system',
+                        time: '%{#now}'
+                    },
+                    add-tags: [ 'system', 'metrics', 'spikex', 'load', 'oshi' ]
+                }
+            },
+            {
+                filter: 'Limit',
+                config: {
+                    database-name: 'limit.db',
+                    database-compact-on-startup: true,
+                    discard-on-mismatch: false,
+                    schedules: { anytime: '* * * * *' },
+                    throttles: {
+                        one-per-15-minutes: {
+                            rate: 1,
+                            interval: 15,
+                            unit: 'min'
+                        }
+                    },
+                    rules: [
+                        {
+                            match-tag: 'ALARM',
+                            schedule: 'anytime',
+                            throttle: 'one-per-15-minutes'
+                        }
+                    ]            
+                }
+            },
+            { '%OutputAddress': 'spikex-event' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'spikex-event' },
+            { filter: 'Log.out', config: { mdc-value: '%{@type}' } }
+        ]
+    }
+]

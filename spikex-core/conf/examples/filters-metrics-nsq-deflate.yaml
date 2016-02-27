@@ -1,0 +1,38 @@
+# ------------------------------------------------------------------------------
+# Spike.x - publish metrics to NSQ
+# ------------------------------------------------------------------------------
+
+modules: [
+    {
+      module: 'io.spikex~spikex-filter',
+      filters: [
+            { alias: 'Buffer', verticle: 'io.spikex.filter.Buffer' },
+            { alias: 'Nsq.out', verticle: 'io.spikex.filter.output.Nsq' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'output-nsq-deflate',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            {
+                filter: 'Nsq.out',
+                config: {
+                    nodes: [ 'localhost:4150' ],
+                    compression: 'deflate',
+                    topics: [
+                        { 
+                            name: 'spikex-metrics-topic', 
+                            rule: { 
+                                    match-field: '@dstype',  
+                                    value-in: [ 'GAUGE', 'DERIVE', 'COUNTER', 'ABSOLUTE' ] # Accept only numerical values (no strings)
+                                    }
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+]

@@ -1,0 +1,9 @@
+<checkresults>
+    <checkresult type="service">
+        <hostname>WSP7</hostname>
+        <servicename>swap</servicename>
+        <state>0</state>
+        <output>Swap memory: \??\C:\pagefile.sys 144.406MB (4GB), total 144.406MB (4GB)|'@dsname'=system.swap;'@dstype'=GAUGE;'@interval'=60000;'@values'=used=144.406MB,free=3.859GB,total=4GB;#'=151420928b;429450035;644175052;0;4294500352 '@dsname'=system.swap;'@dstype'=GAUGE;'@interval'=60000;'@values'=used=144.406MB,free=3.859GB,total=4GB;# %'=3%;9;14;0;100 '@dsname'=system.swap;'@dstype'=GAUGE;'@interval'=60000;'@values'=used=144.406MB,free=3.859GB,total=4GB;#'=151420928b;429450035;644175052;0;4294500352 '@dsname'=system.swap;'@dstype'=GAUGE;'@interval'=60000;'@values'=used=144.406MB,free=3.859GB,total=4GB;# %'=3%;9;14;0;100</output>
+    </checkresult>
+</checkresults>
+&cmd=submitcheck&token=1234secret!

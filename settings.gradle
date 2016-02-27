@@ -1,0 +1,6 @@
+include 'spikex-site'
+include 'spikex-core'
+include 'spikex-filter'
+include 'spikex-notifier'
+include 'spikex-metrics'
+include 'spikex-tmpl'

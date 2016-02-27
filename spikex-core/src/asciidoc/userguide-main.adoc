@@ -1,0 +1,626 @@
+:icons: font
+:iconfont-cdn: https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css
+
+= Spike.x User Guide
+Christoffer Lindevall
+February v1.0, 2016: Dawn of the Four-toed hedgehog
+:keywords: documentation, spikex, vertx, vert.x
+
+:numbered!:
+[abstract]
+= Sense. React. Visualize.
+
+Reactive event monitoring and data analysis built on top of http://vertx.io/vertx2[Vert.x].
+
+Spike.x provides components for resource monitoring, for data filtering and streaming, 
+for sending of notifications and for storing of metrics and events in various backends.
+
+Spike.x can be used out-of-the-box for the following use cases:
+
+icon:bar-chart[] Filtering, streaming and analysis of events::
+* Tail logs and send events to https://www.elastic.co[Elasticsearch] or https://influxdata.com[InfluxDB]
+* Collect JVM, CPU, network, filesystem and memory metrics
+* Collect database metrics using custom SQL
+* Query, analyze and present the data with https://www.elastic.co/products/kibana[Kibana] or http://grafana.org[Grafana]
+
+icon:bell[] Event monitoring and sending of notifications::
+* Monitor key data parameters 
+* Trigger events based on custom rules
+* Log and send notifications to interested parties
+* Rule based sending of alarms
+
+CAUTION: Spike.x 0.9.0 is still in its infancy. It will take some time before it can be 
+considered production ready.
+
+TIP: We are planning to migrate to http://vertx.io[Vert.x 3] as soon as possible.
+
+:numbered:
+
+== Introduction
+
+Spike.x is built on top of the excellent http://vertx.io/vertx2[Vert.x platform]. Vert.x 
+is one of the many modern actor-like application platforms for the JVM. 
+
+.What is Vert.x?
+****
+"Vert.x is a polyglot, non-blocking, event-driven application platform that runs on the JVM."
+-- http://vertx.io/vertx2/manual.html#what-is-vertx
+****
+
+You do not have to worry about thread synchronization when building applications 
+on top of Vert.x. You communicate using messages and you compose your code
+into one or more modules. The verticle is the main actor in Vert.x. These and many 
+other concepts are explained in the http://vertx.io/vertx2/manual.html[Vert.x documentation].
+
+Spike.x brings a few concepts of its own to the table. We introduce the following
+concepts: activator, filter and command.
+
+An activator is simply a verticle that is responsible for deploying and undeploying
+verticles within a module. The activator is the main verticle of a module.
+
+A filter is a verticle that receives input, sends output or does both. Spike.x 
+comes with many filters that can be chained together in various ways. Here's a list 
+of some of the built-in filters:
+
+* Tail - reads lines from a log
+* Mutate - modifies an event
+* Limit - performs event limiting
+* Grok - matches regexps against an event field
+* HttpServer - receives events via HTTP (supports collectd wtite-http plugin and Nagios NRDP)
+* Batch - creates a batch of events before publishing
+* NSQ - publishes or subscribes events to/from NSQ
+* InfluxDB - stores events in InfluxDB 0.10.x or later
+* Elasticsearh - stores events in Elasticsearch
+
+Commands are used to control the behaviour of verticles. We send commands to
+activators in order to deploy and undeploy filters. These commands are an internal
+detail of Spike.x. 
+
+Spike.x has a Main class that is responsible for bootstrapping and starting 
+the Vert.x platform. It also takes care of daemonizing Spike.x if needed on 
+platforms that support this. Please see the spikex startup script for details.
+
+When you start Spike.x it tries to load any required modules from a local deploy directory.
+
+Spike.x depends on many well-established open source libraries. The following is a list 
+of some of the core dependencies:
+
+* SLF4J - Simple Logging Facade for Java
+* Logback - SLF4J implementation
+* Guava - Google's core libraries
+* Joda-Time - Java date and time API (also part of Java 8)
+* Bouncy Castle Crypto APIs for Java
+* Hazelcast - Open Source In-Memory Data Grid (part of Vert.x)
+* LZ4 Java - LZ4 compression and xxhash hashing for Java
+* SnakeYAML - YAML parser and emitter for Java
+* GS Collections - A supplement or replacement for the Java Collections Framework
+
+=== Supported platforms
+
+[TIP]
+Spike.x can be installed on almost any platform that supports JDK 1.8 or newer to run. Please note that some of the filters only work on a specific platform.
+
+The following platforms are currently supported:
+
+* Windows 64-bit (Windows 7, Windows 2008 Server, etc.)
+* Linux 64-bit (Ubuntu, CentOs, RedHat, etc.)
+* Apple OS X 64-bit (Yosemite or newer)
+* FreeBSD 64-bit (FreeBSD 10 and newer)
+
+=== Quick start
+
+You can grab the latest Spike.x installation package from https://bintray.com/spikex/generic/installer/view[Bintray].
+
+Simply launch the installer and follow the instructions.
+
+IMPORTANT: The installer requires Java to function and Spike.x requires JDK 1.8 or newer.
+
+=== Directories and files
+
+Spike.x is installed by default in `/var/lib/spikex` or in `C:\Program Files\Spike.x` on Windows. 
+
+The main configuration file is called `spikex.yaml` and it can be found in the `conf` directory. 
+You rarely need to modify this http://yaml.org[YAML] file. It lists the modules that you want to 
+load from the `deploy` directory.
+
+IMPORTANT: Be careful not to save broken configuration files since Spike.x reloads saved configuration files automatically.
+
+Filters are configured using one or more filter configuration files. 
+These http://yaml.org[YAML] files must start with the `filters` prefix and they are also stored in the `conf` directory.
+
+Persistent data files are stored in the `data` directory. Whereas temporary data files, 
+that can be removed after Spike.x has been stopped, are storde in the `tmp` directory.
+
+.Spike.x directories within the home directory
+[width="100%",options="header"]
+|====================================================
+|Directory         |Description
+|bin               |Executables and service files
+|conf              |Configuration and example files
+|data              |Persistent data files
+|deploy            |Deployable modules
+|docs              |Javadocs and user guide
+|lib               |Libraries required by Spike.x
+|log               |Log files
+|tmp               |Temprary data files
+|====================================================
+
+=== Wiki and issues
+
+We maintain a small https://github.com/clidev/spike.x/wiki[Wiki] that you might find useful. 
+The latest issues can be found in https://github.com/clidev/spike.x/issues[GitHub].
+
+=== License
+
+Spike.x is provided under the terms of the http://www.apache.org/licenses/LICENSE-2.0[Apache License, Version 2.0].
+
+We carefully try to select and include only http://www.apache.org/licenses/LICENSE-2.0[Apache License, Version 2.0] 
+compliant software with Spike.x.
+
+== Installation
+
+Spike.x runs on the https://en.wikipedia.org/wiki/Java_virtual_machine[Java VM]. It requires an adequate amount of memory and CPU resources to run. 
+In a typical small scale scenario you would install Spike.x on a dedicated host that is not running a mission critical system. 
+Spike.x would receive data from light-weight agents like https://collectd.org[collectd] and https://www.nsclient.org[NSClient++]. 
+It would then "sanitize" the data and finally send it off to a backend.
+
+The minimum system requirements usually depend on the amount of data being processed. 
+Typically one CPU and 1 GB of memory should be adequate for most scenarios. The default installation uses the following JVM heap memory settings: 
+
+* -Xms64m
+* -Xmx256m
+
+We would advise you to start with the defaults settings and monitor the resource usage of Spike.x using the <<module-metrics,Metrics>> module.
+
+
+
+The latest version of Spike.x is found at https://bintray.com/spikex/generic/installer/view[Bintray]. The `EXE` installer is for Windows platforms, whereas the `JAR` installer is for all other platforms.
+Please note that Spike.x requires JDK 1.8 or newer. We test Spike.x on the http://www.oracle.com/technetwork/java/javase/downloads/index.html[Oracle JDK] and the http://openjdk.java.net[OpenJDK]. See the platform instructions below for installation details.
+
+=== Deployment models
+
+We present InfluxDB and Grafana for storage and visualization in the deployment diagrams below but you could also use 
+<<use-case-elasticsearch-kibana,Elasticsearch and Kibana>>.
+
+.Simple deployment diagram
+image:spikex-deployment-simple.png[]
+
+This deployment could be used if you are testing some software and want to do a minimal installation. 
+Nothing prevents you from installing the whole stack in one host if there's enough resources.
+
+.Small-scale deployment diagram
+image:spikex-deployment-small-scale.png[]
+
+This deployment could be used for a production site where you want to keep the monitored data locally on private servers 
+and you are not too concerned with scaling out the system.
+
+.Cloud-based deployment diagram
+image:spikex-deployment-cloud-based.png[]
+
+This deployment is ideal when you have multiple sites to monitor and you want to centralize the storage and visualization. 
+At the time of writing there is at least one https://customers.influxdb.com[hosted InfluxDB cloud service] that is supported by Spike.x. 
+Any service that exposes the InfluxDB HTTP API should work with Spike.x. The setup for this deployment is explained in <<use-case-influxdb-grafana,the monitoring use case>>.
+
+=== Spike.x on Linux, OS X and FreeBSD
+
+Download the latest Spike.x `JAR` installer from https://bintray.com/spikex/generic/installer/view[Bintray].
+
+[source,shell,subs="attributes"]
+wget https://bintray.com/artifact/download/spikex/generic/spikex-{project-version}-installer.jar
+
+[source,shell,subs="attributes"]
+curl -O https://bintray.com/artifact/download/spikex/generic/spikex-{project-version}-installer.jar
+
+Run the installer and follow the instructions.
+
+[source,shell,subs="attributes"]
+sudo java -jar spikex-{project-version}-installer.jar
+
+Test that you are able to start Spike.x in the terminal. Spike.x should output that it has deployed all the standard modules successfully.
+
+[source,shell]
+cd /var/lib/spikex
+su -c 'bin/spikex' spikex
+
+==== Linux
+
+Copy the appropriate service script to `/etc/init.d` or `/etc/systemd/system` depending on your Linux distribution. 
+Please refer to the documentation of your distribution.
+
+Start the Spike.x service and verify from the Spike.x log that the service started up without problems. 
+
+.CentOS 7 example
+[source,shell]
+sudo cp bin/spikex.service /etc/systemd/system
+sudo systemctl daemon-reload
+sudo systemctl enable spikex
+sudo systemctl start spikex
+sudo less /var/lib/spikex/log/spikex.log
+
+Stop the Spike.x service and create your filter configuration in `/var/lib/spikex/conf`. 
+You can simply copy an example configuration from `/var/lib/spikex/conf/examples` and edit it to suit your needs.
+
+Please see the <<Simple monitoring example>> to get started. Configuration details can be found in the <<Filters,filters section>>.
+
+Remember to start the Spike.x service again once you have configured your filters and chains.
+
+=== Spike.x on Windows
+
+Download the latest Spike.x `EXE` installer from https://bintray.com/spikex/generic/installer/view[Bintray].
+
+Launch the installer and follow the instructions.
+
+.Welcome screen
+image:spikex-win-install-welcome.png[]
+
+.License agreement
+image:spikex-win-install-license.png[]
+
+.Target path
+image:spikex-win-install-target-path.png[]
+
+.Installation packages
+image:spikex-win-install-packages.png[]
+
+.Summary
+image:spikex-win-install-summary.png[]
+
+.Installation progress
+image:spikex-win-install-progress.png[]
+
+.Setup shortcuts
+image:spikex-win-install-shortcuts.png[]
+
+.Installation finished
+image:spikex-win-install-finished.png[]
+
+Verify that the Spike.x was installed successfully as a Windows service.
+
+.Spike.x service
+image:spikex-win-service.png[]
+
+Stop the Spike.x service and create your filter configuration in `C:\Program Files\Spike.x\conf`.
+You can simply copy an example configuration from `C:\Program Files\Spike.x\conf\examples` and edit it to suit your needs.
+
+Please see the <<Simple monitoring example>> to get started. Configuration details can be found in the <<Filters,filters section>>.
+
+Remember to start the Spike.x service again once you have configured your filters and chains.
+
+=== Simple monitoring example
+
+We start by defining an input filter that sends its data to the events log file. It also sends its output to an address called `metrics.spikex`. 
+
+Use your favorite text editor and create a file called `filters-metrics-oshi.yaml` in the `conf` directory.
+
+TIP: the entire `filters-metrics-oshi.yaml` file can be found in the `examples` directory.
+
+.filters-metrics-oshi.yaml
+[source]
+----
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Metrics', verticle: 'io.spikex.filter.input.Metrics' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'system-metrics-load',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: '60s',
+                    metric-selector: 'system.load',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-cpu',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'system.cpu',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-memory',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'system.memory',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-swap',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 60s,
+                    metric-selector: 'system.swap',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-filesystem',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 60s,
+                    metric-selector: 'filesystem',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'jvm-metrics-spikex',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'jvm',
+                    dsname-prefix: 'spikex',
+                    add-tags: [ 'metric', 'spikex-metric-jvm', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]
+----
+
+Start Spike.x from a terminal or the command prompt and verify that no exceptions are thrown.
+
+.Linux or OS X terminal
+[source,shell]
+cd /var/lib/spikex
+su -c "./bin/spikex" spikex
+
+.Windows command prompt as Administrator (assumes that Spike.x was installed on C:)
+[source,shell]
+cd \Program Files\Spike.x\spikex
+bin\spikex.bat
+
+Wait until you see from the output that Spike.x has successfully deployed the `io.spikex.filter.input.Metrics` 
+and `io.spikex.filter.output.Logback` verticles.
+
+You can then let Spike.x run for a while and finally stop it using `Ctrl+d` or `Ctrl+c` on Windows. 
+Inspect the `events.log` file that's stored in the `log` directory. It should contain lines like these:
+
+[source]
+----
+2015-12-06 12:37:50,384 Metrics {"@id":"65f2ab00-9c05-11e5-a3de-080027fe9e8b","@source":"Metrics","@timestamp":1449398270384,"@timezone":"UTC","@type":"metric","@chain":"system-metrics-memory","@priority":"normal","@host":"win7","@dsname":"system.memory","@dstype":"GAUGE","@dsprecision":"s","@subgroup":"used_perc","@instance":"-","@interval":15000,"@value":26.43424368265135,"@tags":["metric","spikex-metric-jvm","oshi"]}
+2015-12-06 12:37:50,384 Metrics {"@id":"65f2ab01-9c05-11e5-a3de-080027fe9e8b","@source":"Metrics","@timestamp":1449398270384,"@timezone":"UTC","@type":"metric","@chain":"system-metrics-cpu","@priority":"normal","@host":"win7","@dsname":"system.cpu","@dstype":"GAUGE","@dsprecision":"s","@subgroup":"load_avg","@instance":"cpu1","@interval":15000,"@value":0.010510910058541777,"@tags":["metric","spikex-metric-jvm","oshi"]}
+----
+
+Please see the <<Troubleshooting>> section if you encounter problems. Usually the `spikex.log` contains the cause of the problem.
+
+== Modules
+
+Spike.x provides the following standard modules that are always available.
+
+.Standard modules
+[width="60%",options="header"]
+|=======================================================================================
+| Module                         | Description
+| Core (mod-spikex-core)         | Base classes and services
+| Filtering (mod-spikex-filter)  | Data input, filtering and output
+| Metrics (mod-spikex-metrics)   | Spike.x JVM and system resource information (CPU, memory, disk, JVM heap, etc.)
+| Notifier (mod-spikex-notifier) | Storing and sending of notifications
+|=======================================================================================
+
+[[module-core]]
+=== Core
+
+home-path
+base-path
+data-path
+run-path
+var-path?
+log-path
+conf-path
+
+==== Configuration
+
+[[module-filter]]
+=== Filter
+==== Configuration
+
+ChainA: filter->filter->filter
+
+[[module-metrics]]
+=== Metrics
+==== Configuration
+
+[[module-notifier]]
+=== Notifier
+==== Configuration
+
+== Filters
+=== Batch
+==== Configuration
+=== Command
+==== Configuration
+=== Grok
+==== Configuration
+=== Limit
+==== Configuration
+=== Mutate
+==== Configuration
+=== Tail
+==== Configuration
+=== Http
+==== Configuration
+=== Elasticsearch
+==== Configuration
+=== Influxdb
+==== Configuration
+=== NSQ
+==== Configuration
+=== Logback
+==== Configuration
+
+== Out-of-box use cases
+
+[[use-case-influxdb-grafana]]
+=== Using InfluxDB and Grafana for monitoring
+
+This use case describes how to monitor system metrics of a Windows host.
+
+Start by setting up a https://customers.influxdb.com[hosted InfluxDB service] provided by https://influxdata.com[influxdata]. You can use the `Start Trial Now` option to test this use case.
+
+Once you have access to the https://customers.influxdb.com[hosted service] you can <<Spike.x on Windows,install Spike.x on a Windows host>>.
+
+Start by copying the `filters-metrics-oshi.yaml` and `filters-metrics-influxdb.yaml` example configuration files to the `conf` directory. 
+
+Set the InfluxDB host, admin account and enable SSL in the `filters-metrics-influxdb.yaml` file:
+
+[source,shell]
+----
+...
+nodes: [ 'https://influxdb:e08b1f004b35ddae@pepsifree-gigawatt-16.c.influxdb.com:8086' ],
+admin-user: 'influxdb',
+admin-password: 'e08b1f004b35ddae',
+ssl-enabled: true,
+...
+----
+
+No modifications are needed to the `filters-metrics-oshi.yaml` configuration file. 
+
+Test that the setup works by starting Spike.x from the command line using Administrator permissions.
+
+[source,shell]
+cd \Program Files\Spike.x\spikex
+bin\spikex.bat
+
+Please see the <<Troubleshooting>> section if you encounter problems. 
+Otherwise login to the hosted Grafana service and setup the Spike.x datasource by simply entering `spikex` in the `Database` field and saving the value.
+
+.Grafana Spike.x datasource
+image:influxdb-hosted-grafana-datasource.png[]
+
+==== Linux, FreeBSD or OS X
+Next you can install https://collectd.org[Collectd] and configure it to send its data to Spike.x.
+You can choose between the https://collectd.org/wiki/index.php/Plugin:Write_HTTP[Write_HTTP] or https://collectd.org/wiki/index.php/Plugin:Network[Network] plugin.
+
+==== Windows
+Next you can download and install https://www.nsclient.org[NSClient&#43;&#43;].
+Replace the default `nsclient.ini` with the one found in the `examples` directory of Spike.x. 
+Restart the `NSClient++` windows service and verify from the `events.log` file that you are receiving measurements.
+
+That's it. Now you can continue by creating beautiful dashboards in Grafana.
+
+[[use-case-elasticsearch-kibana]]
+=== Using Elasticsearch and Kibana for event analysis
+
+This use case describes how to analyze log events using https://www.elastic.co/products/elasticsearch[Elastichsearch] and https://www.elastic.co/products/kibana[Kibana].
+This can be seen as a form of log shipping where we pre-filter the events to only contain data of interest.
+
+Start by setting up a https://www.elastic.co/found[hosted Elasticsearch service] provided by https://www.elastic.co[Elastic]. You can use the `Free Trial` option to test this use case.
+
+Once you have access to the https://www.elastic.co/found[hosted service] you can <<Installation,install Spike.x>> on a host that contains the log file to analyze.
+
+Next we'll configure Spike.x to send some data to Elasticsearch to verify that the hosted service is working. 
+
+=== Monitoring and sending of notifications
+
+CUPS queue monitoring in Linux
+Process/Service monitoring in Windows
+
+== Troubleshooting
+
+== Building Spike.x
+
+Download or clone the sources from https://github.com/clidev/spike.x.git[GitHub].
+
+[source,shell]
+git clone https://github.com/clidev/spike.x.git
+cd spike.x
+
+List the available gradle projects with `gradlew projects`.
+
+[source,shell]
+ ./gradlew projects
+
+List the available gradle tasks with `gradlew tasks`.
+
+[source,shell]
+ ./gradlew tasks
+
+Compile, test and build Spike.x with `gradlew clean build`.
+
+[source,shell]
+ ./gradlew clean build
+
+Create the installation packages with `gradlew izpack launch4j`. The `launch4j` 
+task works in Linux, Windows and OS X.
+
+[source,shell]
+ ./gradlew izpack launch4j
+
+
+CAUTION: Spike.x 0.9.0 and Gradle 1.10 does not support Maven profiles. When
+resolving dependencies you get the following kind of errors:
+
+[source]
+----
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not resolve all dependencies for configuration ':spikex-core:provided'.
+> Could not resolve ch.qos.logback:logback-classic:1.1.1.
+  Required by:
+      io.spikex:spikex-core:0.9.0
+   > Could not parse POM http://jcenter.bintray.com/ch/qos/logback/logback-classic/1.1.1/logback-classic-1.1.1.pom
+      > Resetting to invalid mark
+   > Could not parse POM http://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.1.1/logback-classic-1.1.1.pom
+      > Resetting to invalid mark
+   > Could not parse POM http://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.1.1/logback-classic-1.1.1.pom
+      > Resetting to invalid mark
+> Could not resolve org.kohsuke:akuma:1.9.
+  Required by:
+      io.spikex:spikex-core:0.9.0
+   > Could not parse POM http://jcenter.bintray.com/org/kohsuke/akuma/1.9/akuma-1.9.pom
+      > Content is not allowed in prolog.
+   > Could not parse POM http://repo1.maven.org/maven2/org/kohsuke/akuma/1.9/akuma-1.9.pom
+      > Content is not allowed in prolog.
+   > Could not parse POM http://repo1.maven.org/maven2/org/kohsuke/akuma/1.9/akuma-1.9.pom
+      > Content is not allowed in prolog.
+----
+
+---
+Spike.x - Sense. React. Visualize.

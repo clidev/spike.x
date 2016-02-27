@@ -1,0 +1,9 @@
+<checkresults>
+    <checkresult type="service">
+        <hostname>WSP7</hostname>
+        <servicename>load_cores</servicename>
+        <state>0</state>
+        <output>High CPU load: 15m: 4%, 15m: 1%, 5m: 0%, 5m: 0%, 1m: 0%, 1m: 0%|'@dsname'=system.cpu;'@dstype'=GAUGE;'@subgroup'=15m_avg_perc;'@instance'=core_0;'@interval'=60000;'@value'=4;#'=4%;90;95 '@dsname'=system.cpu;'@dstype'=GAUGE;'@subgroup'=15m_avg_perc;'@instance'=core_1;'@interval'=60000;'@value'=1;#'=1%;90;95 '@dsname'=system.cpu;'@dstype'=GAUGE;'@subgroup'=5m_avg_perc;'@instance'=core_0;'@interval'=60000;'@value'=0;#'=0%;90;95 '@dsname'=system.cpu;'@dstype'=GAUGE;'@subgroup'=5m_avg_perc;'@instance'=core_1;'@interval'=60000;'@value'=0;#'=0%;90;95 '@dsname'=system.cpu;'@dstype'=GAUGE;'@subgroup'=1m_avg_perc;'@instance'=core_0;'@interval'=60000;'@value'=0;#'=0%;90;95 '@dsname'=system.cpu;'@dstype'=GAUGE;'@subgroup'=1m_avg_perc;'@instance'=core_1;'@interval'=60000;'@value'=0;#'=0%;90;95</output>
+    </checkresult>
+</checkresults>
+&cmd=submitcheck&token=1234secret!

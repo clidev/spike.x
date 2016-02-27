@@ -1,0 +1,36 @@
+00:15:43.200 [vert.x-eventloop-thread-3] DEBUG io.netty.buffer.PooledByteBufAllocator - -Dio.netty.allocator.maxCachedBufferCapacity: 32768
+    00:15:43.200 [vert.x-eventloop-thread-3] DEBUG io.netty.buffer.PooledByteBufAllocator - -Dio.netty.allocator.cacheTrimInterval: 8192
+    00:15:43.230 [vert.x-eventloop-thread-3] DEBUG io.netty.util.internal.ThreadLocalRandom - -Dio.netty.initialSeedUniquifier: 0x51d0b18943ef000a
+    00:15:43.241 [vert.x-eventloop-thread-3] DEBUG io.netty.channel.ChannelOutboundBuffer - -Dio.netty.threadLocalDirectBufferSize: 65536
+    00:15:43.242 [vert.x-eventloop-thread-3] DEBUG io.netty.util.Recycler - -Dio.netty.recycler.maxCapacity.default: 262144
+    00:15:43.265 [vert.x-eventloop-thread-3] DEBUG io.netty.buffer.ByteBufUtil - -Dio.netty.allocator.type: unpooled
+    00:15:43.301 [vert.x-eventloop-thread-3] DEBUG o.f.k.f.output.internal.EsHttpClient - Connecting to localhost:9200
+    00:15:43.301 [vert.x-eventloop-thread-3] DEBUG o.f.k.f.output.internal.EsHttpClient - Connecting to localhost:9299
+    00:15:43.302 [vert.x-eventloop-thread-3] INFO  o.f.kumu.filter.output.Elasticsearch - null:Elasticsearch filter started (period: -1)
+    00:15:43.316 [vert.x-eventloop-thread-3] ERROR o.f.k.f.output.internal.EsHttpClient - Failed to connect to localhost:9234
+    java.net.ConnectException: Connection refused: localhost/127.0.0.1:9234
+        at sun.nio.ch.SocketChannelImpl.checkConnect(Native Method) ~[na:1.7.0_45]
+        at sun.nio.ch.SocketChannelImpl.finishConnect(SocketChannelImpl.java:735) ~[na:1.7.0_45]
+        at io.netty.channel.socket.nio.NioSocketChannel.doFinishConnect(NioSocketChannel.java:208) ~[netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.AbstractNioChannel$AbstractNioUnsafe.finishConnect(AbstractNioChannel.java:287) ~[netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:524) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:464) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:378) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:350) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.util.concurrent.SingleThreadEventExecutor$2.run(SingleThreadEventExecutor.java:116) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at java.lang.Thread.run(Thread.java:744) [na:1.7.0_45]
+    00:15:43.369 [vert.x-eventloop-thread-3] ERROR o.f.k.f.output.internal.EsHttpClient - Failed to connect to localhost:9299
+    java.net.ConnectException: Connection refused: localhost/127.0.0.1:9299
+        at sun.nio.ch.SocketChannelImpl.checkConnect(Native Method) ~[na:1.7.0_45]
+        at sun.nio.ch.SocketChannelImpl.finishConnect(SocketChannelImpl.java:735) ~[na:1.7.0_45]
+        at io.netty.channel.socket.nio.NioSocketChannel.doFinishConnect(NioSocketChannel.java:208) ~[netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.AbstractNioChannel$AbstractNioUnsafe.finishConnect(AbstractNioChannel.java:287) ~[netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:524) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:464) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:378) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:350) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at io.netty.util.concurrent.SingleThreadEventExecutor$2.run(SingleThreadEventExecutor.java:116) [netty-all-4.0.20.Final.jar:4.0.20.Final]
+        at java.lang.Thread.run(Thread.java:744) [na:1.7.0_45]
+    00:15:43.648 [vert.x-eventloop-thread-3] INFO  o.f.kumu.filter.output.Elasticsearch - Connected to localhost:9200 (version: 1.3.2)
+    00:15:55.147 [vert.x-eventloop-thread-2] INFO  o.f.k.f.integration.ElasticsearchTest - Created 10000 indexes in 12001 ms
+    00:15:55.152 [vert.x-eventloop-thread-3] DEBUG o.f.kumu.filter.output.Elasticsearch - Stopping "Elasticsearch" verticle

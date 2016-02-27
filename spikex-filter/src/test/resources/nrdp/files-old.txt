@@ -1,0 +1,9 @@
+<checkresults>
+        <checkresult type="service">
+            <hostname>CHL-PC</hostname>
+            <servicename>files_old</servicename>
+            <state>2</state>
+            <output>Old files: a_s_sample.txt, cv.txt, spikex-info.txt, s_sample.txt, test.txt|'a_s_sample.txt_creation'=1433497060;0;1444557774 'cv.txt_creation'=1433733600;0;1444557774 'spikex-info.txt_creation'=1444296208;0;1444557774 's_sample.txt_creation'=1433497083;0;1444557774 'test.txt_creation'=1444464079;0;1444557774</output>
+        </checkresult>
+    </checkresults>
+    &cmd=submitcheck&token=1234secret!

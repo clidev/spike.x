@@ -1,0 +1,48 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{40} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="TAILTEST" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        
+        <file>build/spikex.log</file>
+        
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+        </encoder>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>build/spikex-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <MaxHistory>30</MaxHistory>
+            <TimeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <MaxFileSize>50KB</MaxFileSize>
+            </TimeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+
+    </appender>
+    
+    <appender name="TAILTEST-ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1000</queueSize>
+        <appender-ref ref="TAILTEST"/>
+    </appender>
+
+    <logger name="io.spikex.tailtest" level="DEBUG" additivity="false">
+        <appender-ref ref="TAILTEST-ASYNC"/>
+    </logger>
+
+    <!-- Suppress Vert.x WindowsFileSystem "POSIX style file permissions are not supported" logging -->
+    <logger name="org.vertx.java.core.file.impl.WindowsFileSystem" level="INFO"/>
+    <!-- Suppress Elasticsearch logging -->
+    <logger name="org.elasticsearch" level="INFO"/>
+    <!-- Suppress Apache HTTP wire and header logging -->
+    <logger name="org.apache.http.wire" level="INFO"/>
+    <logger name="org.apache.http.headers" level="INFO"/>
+
+    <root level="TRACE">
+        <appender-ref ref="STDOUT" />
+    </root>
+    
+</configuration>

@@ -1,0 +1,9 @@
+{
+    "main": "io.spikex.notifier.Activator",
+    "description": "Spike.x notifier",
+    "licenses": ["The Apache Software License Version 2.0"],
+    "author": "Christoffer Lindevall",
+    "developers": ["clidev"],
+    "keywords": ["spikex", "Spike.x", "notifier"],
+    "homepage": "https://bitbucket.org/team-spikex/spikex"
+}

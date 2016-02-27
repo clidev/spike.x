@@ -1,0 +1,9 @@
+    <checkresults>
+        <checkresult type="service">
+            <hostname>CHL-PC</hostname>
+            <servicename>disk_remote</servicename>
+            <state>3</state>
+            <output>OK: No drives found</output>
+        </checkresult>
+    </checkresults>
+    &cmd=submitcheck&token=1234secret!

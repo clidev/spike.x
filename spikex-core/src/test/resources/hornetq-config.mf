@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Resource-Version: 1
+Resource-Name: hornetq-config
+Meta-Version: 1

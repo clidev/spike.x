@@ -1,0 +1,53 @@
+<configuration>
+    <id>spikex</id>
+    <name>Spike.x</name>
+    <description>Sense. React. Visualize.</description>
+    <workingdirectory>%BASE%\..</workingdirectory>
+    <logpath>%BASE%\..\log</logpath>
+    <log mode="roll-by-size"/>
+    <startmode>Automatic</startmode>
+    <!--
+    <serviceaccount>
+        <domain>YOURDOMAIN</domain>
+        <user>spikex</user>
+        <password>spikex</password>
+        <allowservicelogon>true</allowservicelogon>
+    </serviceaccount>
+    -->
+    <executable>java.exe</executable>
+    <argument>-Xms64m</argument>
+    <argument>-Xmx256m</argument>
+    <argument>-Xss128k</argument>
+    <argument>-XX:MaxMetaspaceSize=64M</argument>
+    <argument>-XX:+UseG1GC</argument>
+    <argument>-XX:+ParallelRefProcEnabled</argument>
+    <argument>-XX:+UseStringDeduplication</argument>
+    <argument>-verbose:gc</argument>
+    <argument>-XX:+PrintAdaptiveSizePolicy</argument>
+    <argument>-XX:+PrintGCDetails</argument>
+    <argument>-XX:+PrintGCDateStamps</argument>
+    <argument>-Xloggc:%BASE%\..\log\spikex-gc.log</argument>
+    <argument>-XX:+UseGCLogFileRotation</argument>
+    <argument>-XX:NumberOfGCLogFiles=10</argument>
+    <argument>-XX:GCLogFileSize=10M</argument>
+    <argument>-XX:+HeapDumpOnOutOfMemoryError</argument>
+    <argument>-XX:HeapDumpPath=%BASE%\..\log\spikex-dump.hprof</argument>
+    <argument>-Dlogback.logdir=%BASE%\..\log</argument>
+    <argument>-Djava.io.tmpdir=%BASE%\..\tmp</argument>    
+    <argument>-Dio.netty.tmpdir=%BASE%\..\tmp</argument>
+    <argument>-Dio.netty.native.workdir=%BASE%\..\tmp</argument>
+    <argument>-Dio.netty.noUnsafe=true</argument>
+    <argument>-Dspikex.home=%BASE%\..</argument>
+    <argument>-Dvertx.home=%BASE%\..</argument>
+    <argument>-Dvertx.mods=%BASE%\..\mods</argument>
+    <argument>-Dvertx.clusterManagerFactory=org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory</argument>
+    <argument>-Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory</argument>
+    <argument>-Djava.util.logging.config.file=%BASE%\..\conf\logging.properties</argument>
+    <argument>-Dsun.net.inetaddr.ttl=30</argument>
+    <argument>-Djava.awt.headless=true</argument>
+    <argument>-Dvisualvm.display.name=Spike.x</argument>
+    <argument>-server</argument>
+    <argument>-classpath</argument>
+    <argument>%BASE%\..\conf;%BASE%\..\lib\*</argument>
+    <argument>io.spikex.core.Main</argument>
+</configuration>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<registry>
+    <pack name="UninstallStuff">
+        <value name="DisplayName"
+               keypath="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\spikex-@spikex.version@"
+               root="HKLM"
+               string="spikex @spikex.version@"/>
+        <value name="UninstallString"
+               keypath="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\spikex-@spikex.version@"
+               root="HKLM"
+               string="&quot;$JAVA_HOME\bin\javaw.exe&quot; -jar &quot;$INSTALL_PATH\Uninstaller\uninstaller.jar&quot;"/>
+        <value name="HelpLink"
+               keypath="SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\spikex-@spikex.version@"
+               root="HKLM"
+               string="$APP_URL"/>
+    </pack>
+    <pack name="spikex binary">
+        <value name="SPIKEX_HOME"
+               keypath="SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+               root="HKLM"
+               string="$INSTALL_PATH"/>
+        <value name="PATH"
+               keypath="SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+               root="HKLM"
+               string="$OLD_KEY_VALUE;&quot;%SPIKEX_HOME%\bin&quot;"/>
+    </pack>
+</registry>
+

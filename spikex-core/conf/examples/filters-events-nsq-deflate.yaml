@@ -1,0 +1,56 @@
+# ------------------------------------------------------------------------------
+# Spike.x - publish events to NSQ
+# ------------------------------------------------------------------------------
+
+modules: [
+    {
+      module: 'io.spikex~spikex-filter',
+      filters: [
+            { alias: 'Limit', verticle: 'io.spikex.filter.Limit' },
+            { alias: 'Nsq.out', verticle: 'io.spikex.filter.output.Nsq' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'output-nsq-deflate',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            {
+                filter: 'Limit',
+                config: {
+                    discard-on-mismatch: true,
+                    schedules: { anytime: '* * * * *' },
+                    throttles: {
+                        one-per-15-minutes: {
+                            rate: 1,
+                            interval: 15,
+                            unit: 'min',
+                            checksum-field: '@title'
+                        }
+                    },
+                    rules: [
+                        {
+                            match-tag: 'spikex-event',
+                            schedule: 'anytime',
+                            throttle: 'one-per-15-minutes'
+                        }
+                    ]            
+                }
+            },
+            {
+                filter: 'Nsq.out',
+                config: {
+                    nodes: [ 'localhost:4150' ],
+                    compression: 'deflate',
+                    topics: [
+                        { 
+                            name: 'spikex-events-topic', 
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+]

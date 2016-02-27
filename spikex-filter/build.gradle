@@ -1,0 +1,79 @@
+apply from: "gradle/vertx.gradle"
+
+def tcnative_suffix = osdetector.classifier;
+// Fedora variants use a different soname for OpenSSL than other linux distributions
+// (see http://netty.io/wiki/forked-tomcat-native.html).
+if (osdetector.os == "linux" && osdetector.release.isLike("fedora")) {
+    tcnative_suffix += "-fedora";
+}
+
+dependencies {
+
+    //
+    // Filter dependencies
+    //
+    
+    provided project(':spikex-core')
+    compile "io.spikex:spikex-core:+" // We include core as direct dependency (instead of a module)
+    compile "org.rrd4j:rrd4j:2.2"
+    compile "io.thekraken:grok:0.1.1"
+    compile "net.sf.supercsv:super-csv:2.3.1"
+    compile "org.mapdb:mapdb:2.0-beta13"
+    compile "org.msgpack:msgpack-core:0.7.0-p9"
+    compile "com.github.brainlag:nsq-client:1.0.0.RC2"
+    compile "org.sql2o:sql2o:1.5.4"
+    compile "com.zaxxer:HikariCP:2.4.3"
+    compile "com.microsoft.ews-java-api:ews-java-api:2.0"
+    compile "org.codemonkey.simplejavamail:simple-java-mail:2.4"
+    compile "org.unbescape:unbescape:1.1.1.RELEASE"
+    compile "org.jsoup:jsoup:1.8.2"
+    compile "org.apache.httpcomponents:httpclient-osgi:4.5.1"
+    compile "org.jolokia:jolokia-client-java:1.3.2"
+    compile "com.scireum:parsii:1.5"
+    compile "com.googlecode.json-simple:json-simple:1.1.1"
+
+    //
+    // Testing dependencies
+    //
+    
+    // Needed for test drivers
+    provided "org.slf4j:slf4j-api:1.7.12"
+    provided "org.slf4j:log4j-over-slf4j:1.7.12"
+    provided "ch.qos.logback:logback-core:1.1.3"
+    provided "ch.qos.logback:logback-classic:1.1.3"
+    provided "com.goldmansachs:gs-collections-api:6.2.0"
+    provided "com.goldmansachs:gs-collections:6.2.0"
+    provided "org.bouncycastle:bcprov-jdk15on:1.52"
+    provided "io.netty:netty-tcnative:1.1.33.Fork10:" + tcnative_suffix
+
+    testCompile "org.elasticsearch:elasticsearch:1.7.1"
+    testCompile "org.codehaus.groovy:groovy-all:2.4.4"
+    testCompile "org.apache.lucene:lucene-core:4.10.4"
+    testCompile "org.apache.lucene:lucene-analyzers-common:4.10.4"
+    testCompile "org.apache.lucene:lucene-queries:4.10.4"
+    testCompile "org.apache.lucene:lucene-memory:4.10.4"
+    testCompile "org.apache.lucene:lucene-highlighter:4.10.4"
+    testCompile "org.apache.lucene:lucene-queryparser:4.10.4"
+    testCompile "org.apache.lucene:lucene-suggest:4.10.4"
+    testCompile "org.apache.lucene:lucene-join:4.10.4"
+    testCompile "org.apache.lucene:lucene-spatial:4.10.4"
+    testCompile "org.apache.lucene:lucene-suggest:4.10.4"
+    testCompile "org.apache.lucene:lucene-expressions:4.10.4"
+    testCompile "com.spatial4j:spatial4j:0.4.1"
+    testCompile "com.vividsolutions:jts:1.13"
+    testCompile "com.github.spullara.mustache.java:compiler:0.8.13"
+    testCompile "com.h2database:h2:1.4.189"
+}
+
+test {
+    jvmArgs '-Dvertx.clusterManagerFactory=org.vertx.java.spi.cluster.impl.hazelcast.HazelcastClusterManagerFactory'
+    jvmArgs '-Dorg.vertx.logger-delegate-factory-class-name=org.vertx.java.core.logging.impl.SLF4JLogDelegateFactory'
+    jvmArgs "-Djavax.net.ssl.keyStore=${buildDir}/resources/test/ssl/client-private.jks"
+    jvmArgs '-Djavax.net.ssl.keyStorePassword=changeit'
+    jvmArgs '-Djavax.net.ssl.keyStoreType=JKS'
+    jvmArgs "-Djavax.net.ssl.trustStore=${buildDir}/resources/test/ssl/client-truststore.jks"
+    jvmArgs '-Djavax.net.ssl.trustStorePassword=changeit'
+    jvmArgs '-Djavax.net.ssl.trustStoreType=JKS'
+    // jvmArgs '-Djavax.net.debug=all'
+    //    include '**/unit/RuleTest*'
+}

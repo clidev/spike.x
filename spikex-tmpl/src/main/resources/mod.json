@@ -1,0 +1,11 @@
+{
+    "main": "io.spikex.xyz.XyzAgent",
+    "worker": true,
+    "description": "Spike.x xyz module",
+    "licenses": ["The Apache Software License Version 2.0"],
+    "author": "Christoffer Lindevall",
+    "developers": ["clidev"],
+    "keywords": ["spikex", "Spike.x", "worker"],
+    "homepage": "https://bitbucket.org/team-spikex/spikex",
+    "includes": "io.spikex~spikex-core~0.9.0"
+}

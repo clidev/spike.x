@@ -1,0 +1,14 @@
+================================================================================
+Importing a client PKCS12 file into the default Spike.x keystore
+================================================================================
+
+!Note! It is important to use the same key and store password to avoid: 'Cannot recover key'
+
+1. Download the spikex.p12 PKCS12 file
+2. Import the client key and cert using the following command:
+
+sudo keytool -v -importkeystore -srckeystore spikex.p12 -srcstoretype PKCS12 -srcalias 1 -destkeystore $SPIKEX_HOME/conf/keystore.jks -deststoretype JKS -destalias spikex
+
+3. Set the key and store password using the following command:
+
+sudo keytool -keypasswd -new 1234secret! -keystore $SPIKEX_HOME/conf/keystore.jks -storepass 1234secret! -alias spikex -keypass spikex

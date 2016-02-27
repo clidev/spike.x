@@ -1,0 +1,11 @@
+apply plugin: 'me.champeau.jbake'
+
+jbake {
+    input = file("${buildDir}/../src/site")
+    output = file("${buildDir}/site")
+}
+
+task publish(type: GradleBuild) {
+    buildFile = 'publish.gradle'
+    tasks = ['publishGhPages']
+}

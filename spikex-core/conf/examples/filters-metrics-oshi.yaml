@@ -1,0 +1,108 @@
+# ------------------------------------------------------------------------------
+# Spike.x - publish Spike.x JVM OSHI metrics (Linux, Windows and OS X)
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Metrics', verticle: 'io.spikex.filter.input.Metrics' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'system-metrics-load',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: '60s',
+                    metric-selector: 'system.load',
+                    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-cpu',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'system.cpu',
+                    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-memory',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'system.memory',
+                    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-swap',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 60s,
+                    metric-selector: 'system.swap',
+                    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'system-metrics-filesystem',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 60s,
+                    metric-selector: 'filesystem',
+                    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'jvm-metrics-spikex',
+        filters: [
+            {
+                filter: 'Metrics',
+                config: {
+                    update-interval: 15s,
+                    metric-selector: 'jvm',
+                    dsname-prefix: 'spikex',
+                    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]

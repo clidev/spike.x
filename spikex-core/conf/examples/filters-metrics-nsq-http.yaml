@@ -1,0 +1,50 @@
+# ------------------------------------------------------------------------------
+# Spike.x - publish metrics to NSQ
+# ------------------------------------------------------------------------------
+
+modules: [
+    {
+      module: 'io.spikex~spikex-filter',
+      filters: [
+            { alias: 'Buffer', verticle: 'io.spikex.filter.Buffer' },
+            { alias: 'NsqHttp.out', verticle: 'io.spikex.filter.output.NsqHttp' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'output-nsq-http',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            {
+                filter: 'Buffer',
+                worker: true,
+                config: {
+                    update-interval: '10s',
+                    database-name: 'nsq-buffer.db',
+                    database-compact-on-startup: true,
+                    max-batch-size: 1000
+                }
+            },
+            {
+                filter: 'Nsq.out',
+                config: {
+                    nodes: [ 'https://localhost:4151' ],
+                    topic-selector: '%{@nsq.topic}',
+                    ssl-enabled: true,
+                    keystore-path: '%{#spikex.conf}/keystore.jks',
+                    keystore-password: '1234secret!',
+                    truststore-path: '%{#spikex.conf}/truststore.jks',
+                    truststore-password: '1234secret!',
+                    load-balancing: {
+                        strategy: 'round-robin',
+                        status-uri: '/info',
+                        health-check: true,
+                        check-interval: 5000
+                    }
+                }
+            }
+        ]
+    }
+]

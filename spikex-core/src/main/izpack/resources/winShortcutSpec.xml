@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
+<shortcuts>
+  <skipIfNotSupported/>
+
+  <programGroup defaultName="$appGroup"
+                location="applications"/>
+
+  <shortcut
+    name="Spike.x User Guide"
+    target="$INSTALL_PATH\spikex\docs\asciidoc\userguide-main.html"
+    commandLine=""
+    workingDirectory="$INSTALL_PATH"
+    description="Spike.x @spikex.version@ User Guide"
+    initialState="normal"
+    programGroup="yes"
+    desktop="no"
+    iconFile="$INSTALL_PATH\spikex\bin\spikex.ico"
+    applications="yes"
+    startMenu="no"
+    startup="no">
+  </shortcut>
+
+  <shortcut
+    name="Spike.x Uninstaller"
+    target="$INSTALL_PATH\uninstall.bat"
+    iconFile="$INSTALL_PATH\uninstall.ico"
+    commandLine=""
+    workingDirectory="$INSTALL_PATH"
+    description="Uninstall Spike.x"
+    initialState="normal"
+    programGroup="yes"
+    desktop="no"
+    applications="yes"
+    startMenu="no"
+    startup="no">
+  </shortcut>
+
+</shortcuts>

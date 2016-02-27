@@ -1,0 +1,22 @@
+apply from: "gradle/vertx.gradle"
+
+dependencies {
+    
+    //
+    // XYZ dependencies
+    //
+
+    provided project(':spikex-core')
+    compile "io.spikex:spikex-core:+" // We include core as direct dependency (instead of a module)
+
+    //
+    // Testing dependencies
+    //
+    
+    // Needed to provide SL4FJ classes for test drivers
+    provided "org.slf4j:slf4j-api:1.7.6"
+    provided "ch.qos.logback:logback-core:1.1.1"
+    provided "ch.qos.logback:logback-classic:1.1.1"
+    provided "com.goldmansachs:gs-collections-api:6.2.0"
+    provided "com.goldmansachs:gs-collections:6.2.0"
+}

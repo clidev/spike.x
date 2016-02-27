@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>io.spikex.core.Spike.x</string>
+        <key>EnvironmentVariables</key>
+        <dict>
+                <key>SPIKEX_HOME</key>
+                <string>$INSTALL_PATH/spikex</string>
+        </dict>
+	<key>ProgramArguments</key>
+	<array>
+		<string>$INSTALL_PATH/spikex/bin/spikex</string>
+		<string>-daemon</string>
+	</array>
+	<key>StandardErrorPath</key>
+	<string>/dev/null</string>
+	<key>StandardOutPath</key>
+	<string>/dev/null</string>
+        <key>RunAtLoad</key>
+        <true/>
+</dict>
+</plist>

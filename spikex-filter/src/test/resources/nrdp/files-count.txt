@@ -1,0 +1,9 @@
+    <checkresults>
+        <checkresult type="service">
+            <hostname>CHL-PC</hostname>
+            <servicename>files_count</servicename>
+            <state>0</state>
+            <output>0</output>
+        </checkresult>
+    </checkresults>
+    &cmd=submitcheck&token=1234secret!

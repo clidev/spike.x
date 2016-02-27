@@ -1,0 +1,9 @@
+#!/bin/sh
+/bin/echo -n "Remove Spike.x installation: %INSTALL_PATH [Y/n]? "
+read line
+case "$line" in
+    n|N) exit 0
+        ;;
+    y|Y) echo "Removing..." && /bin/rm -frv %INSTALL_PATH && echo "Done."
+        ;;
+esac

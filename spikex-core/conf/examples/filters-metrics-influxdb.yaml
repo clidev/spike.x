@@ -1,0 +1,110 @@
+# ------------------------------------------------------------------------------
+# Spike.x - publish metrics to InfluxDB
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Buffer', verticle: 'io.spikex.filter.Buffer' },
+            { alias: 'InfluxDB.out', verticle: 'io.spikex.filter.output.InfluxDb' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'output-influxdb',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            {
+                filter: 'Buffer', 
+                worker: true,
+                config: { 
+                    update-interval: '10s',
+                    database-name: 'influxdb-buffer.db',
+                    database-compact-on-startup: true,
+                    max-batch-size: 1000
+                }
+            },
+            {
+                filter: 'InfluxDB.out', 
+                config: { 
+                    nodes: [ 'http://user:pwd@localhost:8086' ],
+                    admin-user: 'user',
+                    admin-password: 'pwd',
+                    database-name: 'spikex',
+                    precision: 'ms',
+                    create-database-on-startup: true,
+                    retention-duration: '180d',
+                    consistency: 'ALL',
+                    series: [
+                        { 
+                            name: '%{@dsname}', 
+                            rule: { 
+                                    match-tag: 'spikex-metric', 
+                                    match-field: '@dstype',  
+                                    value-in: [ 'GAUGE', 'DERIVE', 'COUNTER', 'ABSOLUTE' ] # Accept only numerical values (no strings)
+                                    },
+                            time-field: '@timestamp',
+                            value-fields: [ { name: '@value', type: '%{@dstype}' } ],
+                            add-tags: { 
+                                        host: '%{@host}', 
+                                        subgroup: '%{@subgroup}',
+                                        instance: '%{@instance}',
+                                        interval: '%{@interval}',
+                                        dsname: '%{@dsname}',
+                                        dstype: '%{@dstype}'
+                            } 
+                        },
+                        { 
+                            name: '%{@dsname}', 
+                            rule: { match-tag: 'collectd-metric' },
+                            time-field: '@timestamp',
+                            value-fields: [ { name: '@value', type: '%{@dstype}' } ],
+                            add-tags: { 
+                                        host: '%{@host}', 
+                                        subgroup: '%{@subgroup}',
+                                        instance: '%{@instance}',
+                                        interval: '%{@interval}',
+                                        dsname: '%{@dsname}',
+                                        dstype: '%{@dstype}'
+                            } 
+                        },
+                        { 
+                            name: 'oshi.%{@dsname}', 
+                            rule: { 
+                                    match-tag: 'spikex-metric-oshi', 
+                                    match-field: '@dstype',  
+                                    value-in: [ 'GAUGE', 'DERIVE', 'COUNTER', 'ABSOLUTE' ] # Accept only numerical values (no strings)
+                                    },
+                            time-field: '@timestamp',
+                            value-fields: [ { name: '@value', type: '%{@dstype}' } ],
+                            add-tags: { 
+                                        host: '%{@host}', 
+                                        subgroup: '%{@subgroup}',
+                                        instance: '%{@instance}',
+                                        interval: '%{@interval}',
+                                        dsname: '%{@dsname}',
+                                        dstype: '%{@dstype}'
+                            } 
+                        },
+                        { 
+                            name: 'events', 
+                            rule: { match-tag: 'event' },
+                            time-field: '@timestamp',
+                            value-fields: [ 
+                                            { name: '@title', type: 'string' },
+                                            { name: '@tags', type: 'string' },
+                                            { name: '@message', type: 'string' }
+                                          ],
+                            add-tags: { 
+                                        host: '%{@host}'
+                            } 
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+]

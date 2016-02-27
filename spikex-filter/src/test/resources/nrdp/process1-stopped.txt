@@ -1,0 +1,9 @@
+<checkresults>
+    <checkresult type="service">
+        <hostname>CHL-PC</hostname>
+        <servicename>process_other</servicename>
+        <state>2</state>
+        <output>HPHotkeyMonitor.exe=stopped|'@dsname'=process;'@dstype'=GAUGE;'@instance'=HPHotkeyMonitor.exe;'@interval'=60000;'@values'=mem_used=0,swap_used=0,handles_used=0,user_time=0,kernel_time=0,pid=0,started_time=0;# state'=0;0;0 'count'=1;0;0</output>
+    </checkresult>
+</checkresults>
+&cmd=submitcheck&token=1234secret!

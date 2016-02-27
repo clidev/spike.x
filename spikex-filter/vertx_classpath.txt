@@ -1,0 +1,5 @@
+src/main/resources
+bin
+out/production/spikex-filter
+out/test/spikex-filter
+build/deps

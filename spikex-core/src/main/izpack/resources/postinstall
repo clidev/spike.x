@@ -1,0 +1,5 @@
+#!/bin/sh
+INSTALL_PATH="$1"
+/bin/echo -n "Performing post installation tasks (target: $INSTALL_PATH)"
+/bin/chmod 600 "$INSTALL_PATH/conf/jmxremote.access"
+/bin/chmod 600 "$INSTALL_PATH/conf/jmxremote.password"

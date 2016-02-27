@@ -1,0 +1,21 @@
+# If you modify this, please also make sure to edit spikex-init.sh
+
+[Unit]
+Description=Spike.x is an open-source metrics collector and aggregator for time series data
+Documentation=http://www.spikex.io
+After=network.target
+
+[Service]
+User=spikex
+Group=spikex
+LimitNOFILE=65536
+Environment='STDOUT=/dev/null'
+Environment='STDERR=/var/lib/spikex/spikex-stderr.log'
+EnvironmentFile=-/etc/default/spikex
+ExecStart=/bin/sh -c "/var/lib/spikex/bin/spikex -conf /var/lib/spikex/conf ${SPIKEX_OPTS} >>${STDOUT} 2>>${STDERR}"
+KillMode=control-group
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+Alias=spikex.service

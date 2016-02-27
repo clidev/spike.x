@@ -1,0 +1,9 @@
+<checkresults>
+    <checkresult type="service">
+        <hostname>WSP7</hostname>
+        <servicename>mem</servicename>
+        <state>0</state>
+        <output>Low system memory: physical = 2.413GB|'@dsname'=system.memory;'@dstype'=GAUGE;'@interval'=60000;'@values'=used=2.413GB,free=1.587GB,total=4GB;#'=1703608320b;429450035;214725017;0;4294500352 '@dsname'=system.memory;'@dstype'=GAUGE;'@interval'=60000;'@values'=used=2.413GB,free=1.587GB,total=4GB;# %'=39%;9;4;0;100</output>
+    </checkresult>
+</checkresults>
+&cmd=submitcheck&token=1234secret!

@@ -1,0 +1,9 @@
+    <checkresults>
+    <checkresult type="service">
+        <hostname>CHL-PC</hostname>
+        <servicename>logfile_test</servicename>
+        <state>2</state>
+        <output>C:/temp/test.txt: 1 (java.lang.ArrayIndexOutOfBoundsException, , )</output>
+    </checkresult>
+    </checkresults>
+    &cmd=submitcheck&token=1234secret!

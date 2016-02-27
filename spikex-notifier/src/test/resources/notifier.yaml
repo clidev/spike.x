@@ -1,0 +1,104 @@
+# ------------------------------------------------------------------------------
+# Spike.x notifier configuration
+# ------------------------------------------------------------------------------
+
+local-address: 'spikex-notifier'
+
+dispatcher-interval: 500
+dispatcher-batch-size: 10
+dispatcher-mail-html-escape: true
+dispatcher-file-html-unescape: true
+
+database: {
+    name: 'notifier.db',
+    compact-on-startup: true
+}
+
+templates: [
+    {
+        name: 'email',
+        url: '%{#spikex.conf}/template/email.html',
+        locales: [ 'sv_SE', 'en_GB' ]
+    },
+    {
+        name: 'plain',
+        url: '%{#spikex.conf}/template/plain.txt'
+    },
+    {
+        name: 'flowdock',
+        url: '%{#spikex.conf}/template/flowdock.txt'
+    }
+]    
+
+destinations: 
+    - { name: 'helpdesk', addresses: [ 'file:%{#spikex.data}/helpdesk' ] }
+    - { name: 'frontline', addresses: [ 'file:%{#spikex.data}/frontline' ] }
+    - { name: 'file', addresses: [ 'file:%{#spikex.data}/notifications' ] }
+    - { name: 'itsupport', addresses: [ 'mailto:jdoe@mycompany.com' ] }
+    - { name: 'techservice', addresses: [ 'flowdock://api.flowdock.com/flows/my-organization-name/my-flow-name/messages' ] }
+
+schedules: 
+    - { name: 'worktime', cronline: '* 8-15 * * Mon,Tue,Wed,Thu,Fri' }
+    - { name: 'evening', cronline: '* 16-21 * * Mon,Tue,Wed,Thu,Fri Europe/Helsinki' }
+    - { name: 'anytime', cronline: '* * * * *' }
+
+rules: [
+    {
+        name: 'any-event',
+        match-tags: [ '*' ],
+        template: 'plain',
+        subject: 'Event from %{@source}',
+        destinations: [ 'file' ],
+        schedule: 'anytime'
+    },
+    {
+        name: 'severe-event',
+        match-tags: [ 'ERROR', 'Alarm', 'PANIC' ],
+        template: 'email',
+        subject: 'Alert from %{@source}',
+        destinations: [ 'frontline', 'helpdesk' ],
+        schedule: 'anytime'
+    },
+    {
+        name: 'info-event',
+        match-tags: [ 'INFO' ],
+        template: 'email',
+        subject: 'Meddelande från %{@source}',
+        destinations: [ 'helpdesk' ],
+        schedule: 'evening',
+        locale: 'sv_SE'
+    },
+    {
+        name: 'info-flowdock',
+        match-tags: [ 'NOTICE' ],
+        template: 'flowdock',
+        subject: '%{@source}',
+        destinations: [ 'techservice' ],
+        schedule: 'anytime'
+    }
+]
+
+email: {
+    smtp-host: 'smtp.mycompany.com',
+    smtp-port: 25,
+    smtp-user: 'john',
+    smtp-password: 'plain127text',
+    smtp-tls: true,
+    use-priorities: false,
+    retry-count: 2,
+    retry-wait-sec: 15,
+    headers: {
+        X-Priority: '2'
+    },
+    images: {
+        success-small: '%{#spikex.conf}/template/image/success-small.png',
+        warning-small: '%{#spikex.conf}/template/image/warning-small.png',
+        danger-small: '%{#spikex.conf}/template/image/danger-small.png',
+        spikex-logo: '%{#spikex.conf}/template/image/spikex-logo-48px.png'
+    },
+    from: '%{#host}@mycompany.com'
+}
+
+flowdock: {
+    api-token: 'f92afda038b167a0d0afeae545d433f4'
+}

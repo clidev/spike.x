@@ -1,0 +1,362 @@
+# ------------------------------------------------------------------------------
+# Spike.x filter configuration
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Command', verticle: 'io.spikex.filter.Command' },
+            { alias: 'Mutate', verticle: 'io.spikex.filter.Mutate' },
+            { alias: 'Limit', verticle: 'io.spikex.filter.Limit' },
+            { alias: 'Grok', verticle: 'io.spikex.filter.Grok' },
+            { alias: 'Batch', verticle: 'io.spikex.filter.Batch' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' },
+            { alias: 'Http.in', verticle: 'io.spikex.filter.input.HttpServer' },
+            { alias: 'Jolokia.in', verticle: 'io.spikex.filter.input.Jolokia' },
+            { alias: 'Collectd.in', verticle: 'io.spikex.filter.input.Collectd' },
+            { alias: 'Nsq.in', verticle: 'io.spikex.filter.input.Nsq' },
+            { alias: 'Sql.in', verticle: 'io.spikex.filter.input.Sql' },
+            { alias: 'Tail.in', verticle: 'io.spikex.filter.input.TailFile' },
+            { alias: 'Nsq.out', verticle: 'io.spikex.filter.output.Nsq' },
+            { alias: 'NsqHttp.out', verticle: 'io.spikex.filter.output.NsqHttp' },
+            { alias: 'Rrd.out', verticle: 'io.spikex.filter.output.Rrd4j' },
+            { alias: 'Es.out', verticle: 'io.spikex.filter.output.Elasticsearch' },
+            { alias: 'InfluxDB.out', verticle: 'io.spikex.filter.output.InfluxDb' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'system',
+        filters: [
+            {
+                filter: 'Http.in',
+                config: {
+                    host: 'localhost',
+                    port: 44120,
+                    input-format: 'collectd-json',
+                    add-tags: [ 'metric', 'collectd-metric' ]
+                }
+            },
+            {
+                filter: 'Mutate',
+                worker: false,
+                multi-threaded: false,
+                instances: 1,
+                config: {
+                    add-fields: { 
+                        cpu.total: '%{#metric.system.cpu.total.time}',
+                        io.total: '%{#metric.system.cpu.total.time}',
+                        mem.free: '%{#metric.system.memory.free.perc}',
+                        mem.jvm.use: '%{#metric.jvm.memory.perc}',
+                        '@type': 'spikex-process-metrics'
+                    },
+                    add-tags: [ 'system', 'load', 'cpu', 'mem', 'metric' ],
+                    modifiers: {
+                        low-resource: {
+                            add-tags: [ 'ALARM' ],
+                            add-fields: { '@alarm': 'low resource' }
+                        },
+                        no-files-alarm: {
+                            add-tags: [ 'ALARM' ],
+                            add-fields: { '@alarm': 'no files in directory for last 5 min' }
+                        }
+                    },
+                    rules: [
+                        { 
+                            match-field: 'mem.free',
+                            value-lte: 10,
+                            modifier: 'low-resource'
+                        },
+                        {
+                            match-field: 'cpu.total',
+                            value-gt: 95,
+                            modifier: 'low-resource'
+                        },
+                        {
+                            match-tag: 'dir-watcher',
+                            match-field: 'dir-name',
+                            value-in: [ 'xml-in', 'json-in' ],
+                            variables: {
+                                        'count': '%{file-count}',
+                                        'tm': '%{latest-timestamp}'
+                                    },
+                            # No files for 5 mins
+                            expression: 'if(count = 0 && #now(-5m) > tm)',
+                            modifier: 'no-files-alarm'
+                        }
+                    ]
+                }
+            },
+            {
+                filter: 'Limit',
+                config: {
+                    database-name: 'limit.db',
+                    database-compact-on-startup: true,
+                    discard-on-mismatch: false,
+                    schedules: { anytime: '* * * * *' },
+                    throttles: {
+                        one-per-15-minutes: {
+                            rate: 1,
+                            interval: 15,
+                            unit: 'min'
+                        }
+                    },
+                    rules: [
+                        {
+                            match-tag: 'ALARM',
+                            schedule: 'anytime',
+                            throttle: 'one-per-15-minutes'
+                        }
+                    ]            
+                }
+            },
+            { '%OutputAddress': 'spikex-logger' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'spikex-logger' },
+            { filter: 'Log.out', config: { mdc-value: '%{@type}' } }
+        ]
+    },
+    {
+        chain: 'output-nsq-http',
+        filters: [
+            { '%InputAddress': 'system.limit' },
+            {
+                filter: 'Batch', 
+                config: { 
+                    update-interval: 500,
+                    max-batch-size: 100
+                }
+            },
+            {
+                filter: 'NsqHttp.out', 
+                config: { 
+                    nodes: [ 'https://localhost:5152', 'http://remote:5151' ],
+                    topic-selector: '%{@nsq.topic}',
+                    connect-timeout: 250,
+                    max-pool-size: 3,
+                    keep-alive: true,
+                    pipelining: false,
+                    verify-host: false,
+                    use-compression: true,
+                    ssl-enabled: true,
+                    keystore-path: '%{#spikex.conf}/ssl/client-private.jks',
+                    keystore-password: 'changeit',
+                    truststore-path: '%{#spikex.conf}/ssl/client-truststore.jks',
+                    truststore-password: 'changeit',
+                    load-balancing: {
+                        strategy: 'round-robin',
+                        status-uri: '/info',
+                        health-check: true,
+                        check-interval: 500
+                    }
+                }
+            }
+        ]
+    },
+    {
+        chain: 'output-nsq',
+        filters: [
+            { '%InputAddress': 'system.limit' },
+            {
+                filter: 'Batch', 
+                config: { 
+                    update-interval: 500,
+                    max-batch-size: 100
+                }
+            },
+            {
+                filter: 'Nsq.out', 
+                config: { 
+                    nodes: [ 'localhost:5150' ],
+                    compression: 'deflate',
+                    deflate-level: 6,
+                    ssl-enabled: true,
+                    ssl-client-auth: true,
+                    keystore-path: '%{#spikex.conf}/ssl/client-private.jks',
+                    keystore-password: 'changeit',
+                    truststore-path: '%{#spikex.conf}/ssl/client-truststore.jks',
+                    truststore-password: 'changeit',
+                    topics: [
+                        { 
+                            name: '%{@nsq.topic}' 
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        chain: 'output-influxdb',
+        filters: [
+            { '%InputAddress': 'system.limit' },
+            {
+                filter: 'InfluxDB.out', 
+                config: { 
+                    nodes: [ 'http://user:pwd@localhost:18086', 'http://user:pwd@localhost:28086' ],
+                    load-balancing: {
+                        strategy: 'broadcast',
+                        status-uri: '/ping',
+                        health-check: true,
+                        check-interval: 1000
+                    },
+                    admin-user: 'user',
+                    admin-password: 'pwd',
+                    database-name: 'spikex',
+                    precision: 'ms',
+                    create-database-on-startup: true,
+                    retention-duration: '180d',
+                    consistency: 'ALL',
+                    series: [
+                        { 
+                            name: 'cpu_load', 
+                            rule: { match-tag: 'collectd', match-field: 'plugin', value-equals: 'cpu' },
+                            time-field: '@timestamp',
+                            value-fields: [ { name: '@cpu.total', type: 'float' } ],
+                            add-tags: { 
+                                        host: '%{@host}', 
+                                        datasource: '%{plugin}',
+                                        instance: '%{plugin-instance}', 
+                                        type: '%{type}%{type-instance}',
+                                        zone: 'DMZ' 
+                                        } 
+                        },
+                        { 
+                            name: '%{host}/%{plugin}/%{plugin-instance}/%{type}/%{type-instance}', 
+                            rule: { match-tag: 'influxdb-collectd' },
+                            time-field: '@timestamp',
+                            value-fields: [ { name: 'value' } ],
+                            add-tags: { 
+                                        host: '%{@host}', 
+                                        datasource: '%{plugin}',
+                                        instance: '%{plugin-instance}', 
+                                        type: '%{type}%{type-instance}',
+                                        zone: 'DMZ' 
+                                        } 
+                        },
+                        { 
+                            name: 'io_load', 
+                            rule: { match-tag: 'metric' },
+                            time-field: '@timestamp',
+                            value-fields: [ { name: 'io.total', type: 'integer' } ],
+                            add-tags: { 
+                                        host: '%{@host}', 
+                                        datasource: 'io',
+                                        instance: '0',
+                                        type: '',
+                                        zone: 'SAN' 
+                                        } 
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        chain: 'input-collectd',
+        filters: [
+            {
+                filter: 'Collectd.in', 
+                worker: true,
+                config: { 
+                    security-level: 'None',
+                    username: 'client',
+                    password: '782393secret23!'
+               }
+            }
+        ]
+    },
+    {
+        chain: 'input-nsq',
+        filters: [
+            {
+                filter: 'Nsq.in', 
+                worker: true,
+                config: { 
+                    lookup-nodes: [ 'localhost:4161' ],
+                    topics: [ 'tampere812.metrics.host.urho:test' ],
+                    compression: 'snappy',
+                    lookup-period: 500,
+                    messages-per-batch: 1,
+                    core-pool-size: 1,
+                    max-pool-size: 1,
+                    idle-thread-keep-alive-time: 500,
+                    message-queue-size: 1
+               }
+            }
+        ]
+    },
+    {
+        chain: 'input-sql',
+        filters: [
+            {
+                filter: 'Sql.in', 
+                worker: true,
+                config: { 
+                    update-interval: 5m,
+                    jdbc-url: 'jdbc:h2:mem:sql-test-database;DB_CLOSE_DELAY=-1',
+                    user-name: 'george',
+                    user-password: 'secret1234',
+                    bootstrap-file: '%{#spikex.conf}/create-views.sql',
+                    bootstrap-ignore-errors: false,
+                    hikari-cp: {
+                        max-lifetime: 3600000,
+                        datasource-properties: {
+                            test: 'test'
+                        }
+                    },
+                    queries: [
+                        { 
+                            name: 'test1', 
+                            sql: 'SELECT * FROM perfview'
+                        }
+                    ]
+               }
+            }
+        ]
+    },
+    {
+        chain: 'input-jolokia',
+        filters: [
+            {
+                filter: 'Jolokia.in', 
+                worker: true,
+                update-interval: 15s,
+                config: { 
+                    jolokia-urls: [ 'http://localhost:8080/jolokia' ],
+                    user-name: 'jolokia',
+                    user-password: 'secret1234',
+                    requests: [
+                        { 
+                            # jmx.java.lang.memory.heapmemoryusage
+                            # jmx.java.lang.memory.nonheapmemoryusage
+                            mbean: 'java.lang:type=Memory', 
+                            attributes: [ 'HeapMemoryUsage', 'NonHeapMemoryUsage' ],
+                            dstypes: [ 'GAUGE', 'GAUGE' ]
+                        },
+                        { 
+                            # jmx.java.lang.memory.garbagecollector.concurrentmarksweep
+                            mbean: 'java.lang:type=GarbageCollector,name=ConcurrentMarkSweep',
+                            attributes: [ 'CollectionCount', 'CollectionTime' ],
+                            dstypes: [ 'COUNTER', 'COUNTER' ]
+                        }
+                    ],
+                    add-fields: { 
+                        interval: 15,
+                        plugin: 'jmx',
+                        type: '%{metric-subgroup}', # the JMX MBean domain
+                        instance: '%{metric-instance}', # the JMX MBean attribute
+                        time: '%{#now}'
+                    },
+                    add-tags: [ 'jmx', 'metrics', 'jolokia' ]
+               }
+            }
+        ]
+    }
+]

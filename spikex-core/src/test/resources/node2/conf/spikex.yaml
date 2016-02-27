@@ -1,0 +1,14 @@
+# ------------------------------------------------------------------------------
+# Spike.x main configuration
+# ------------------------------------------------------------------------------
+
+keystore:
+    generate: true
+    path: 'build/keystore.jks'
+    password: '1234secret!'
+    host-fqdn: 'host1.mycloud.net'
+    subject-alt-name: ['www1.mycloud.net', 'web.mycloud.net']
+
+modules:
+    - { id: io.spikex~spikex-test2~0.5.0, instances: 4 }
+    - { id: io.spikex~spikex-test1~0.8.0, config: { update-interval: 500 }}

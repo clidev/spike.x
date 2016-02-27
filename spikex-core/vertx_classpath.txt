@@ -1,0 +1,5 @@
+src/main/resources
+bin
+out/production/spikex-core
+out/test/spikex-core
+build/deps

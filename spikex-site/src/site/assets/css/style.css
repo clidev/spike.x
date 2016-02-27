@@ -1,0 +1,267 @@
+/*
+ * Author: Carlos Alvarez
+ * URL: http://Alvarez.is
+ *
+ * Project Name: NYC Design
+ * Version: 1.0
+ * Date: 04-20-2014
+ * URL: 
+ */
+
+
+/* ==========================================================================
+   Base Styles, Bootstrap Modifications & Fonts Import
+   ========================================================================== */
+
+@import url(http://fonts.googleapis.com/css?family=Montserrat:400,700);
+
+
+::-moz-selection {
+    background: #f2c2c9;
+    color: #a4003a;
+    text-shadow: none;
+}
+
+::selection {
+    background: #16a085;
+    color: #a4003a;
+    text-shadow: none;
+}
+
+/*
+ * A better looking default horizontal rule
+ */
+
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 1em 0;
+    padding: 0;
+}
+
+.centered {
+    text-align: center
+}
+
+.mt {
+    margin-top: 80px;
+}
+
+.mb {
+    margin-bottom: 80px;
+}
+
+/* ==========================================================================
+   General styles
+   ========================================================================== */
+
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+
+    -webkit-font-smoothing: antialiased;
+    -webkit-overflow-scrolling: touch;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: #4a4a4a;
+}
+
+
+.navbar-brand {
+    font-weight: 700;
+}
+
+.navbar-default .navbar-brand {
+    color: #c0c9c9;
+}
+
+.navbar-default {
+    background-color: rgba(0, 0, 0, 0.11);
+    border-color: rgba(0, 0, 0, 0.11);        
+}
+
+.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:hover, .navbar-default .navbar-nav > .active > a:focus {
+    color: #c0c9c9;
+    background-color: transparent;
+    border-bottom: 2px solid #c0c9c9
+}
+
+.navbar-default .navbar-nav > li > a {
+    color: #c0c9c9;
+}
+
+/* ==========================================================================
+   Wrap Sections
+   background: http://zy0rg.deviantart.com/art/City-Lights-370438065
+   ========================================================================== */
+#headerwrap {
+    background: url(../img/spikex-bg.jpg) no-repeat center top;
+    margin-top: -70px;
+    padding-top: 250px;
+    text-align:center;
+    background-attachment: relative;
+    background-position: center center;
+    background-color: #535e94;
+    min-height: 650px;
+    width: 100%;
+
+    -webkit-background-size: 100%;
+    -moz-background-size: 100%;
+    -o-background-size: 100%;
+    background-size: 100%;
+
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+#headerwrap h1 {
+    color:#ffffff;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    letter-spacing: 4px;
+    font-size: 90px;
+    font-weight: bold;
+}
+
+#headerwrap h3 {
+    font-weight: 400;
+    color: #ffffff;
+}
+
+#social {
+    padding-top: 50px;
+    padding-bottom: 50px;
+    background-color: #f2f2f2;
+}
+
+#social i {
+    font-size: 40px;
+    color: #4a4a4a
+}
+
+#social i:hover {
+    color: #c0c9c9
+}
+
+#footerwrap {
+    padding-top: 70px;
+    padding-bottom: 50px;
+    background-color: #2f2f2f;
+}
+
+#footerwrap p {
+    color: #f2f2f2;
+    margin-left: 10px;
+}
+
+#workwrap {	
+    background: url(../img/work.jpg) no-repeat center top;
+    margin-top: -70px;
+    padding-top: 250px;
+    text-align:center;
+    background-attachment: relative;
+    background-position: center center;
+    min-height: 650px;
+    width: 100%;
+
+    -webkit-background-size: 100%;
+    -moz-background-size: 100%;
+    -o-background-size: 100%;
+    background-size: 100%;
+
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+#workwrap h1 {
+    color:#c0c9c9;
+    padding-top: 10px;
+    padding-bottom: 20px;
+    letter-spacing: 4px;
+    font-size: 80px;
+    font-weight: bold;
+}
+
+#workwrap h4 {
+    font-weight: 400;
+    color: #c0c9c9
+}
+
+#aboutwrap {	
+    background: url(../img/about.jpg) no-repeat center top;
+    margin-top: -70px;
+    padding-top: 250px;
+    text-align:center;
+    background-attachment: relative;
+    background-position: center center;
+    min-height: 550px;
+    width: 100%;
+
+    -webkit-background-size: 100%;
+    -moz-background-size: 100%;
+    -o-background-size: 100%;
+    background-size: 100%;
+
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+#downloadwrap {	
+    background: url(../img/cpu_time.jpg) no-repeat center top;
+    min-height: 332px;
+}
+
+.ucblock {
+    margin-top: 30px;
+}
+
+.ucblock i {
+    font-size: 60px;
+    color: #4a4a4a;
+    padding-bottom: 32px;
+}
+
+.ucblock dt {
+    padding-bottom: 16px;
+}
+
+.ucblock dd {
+    line-height: 1.82;
+}
+
+#intro {
+    padding-top: 30px;
+    padding-bottom: 30px;
+    color: #c0c9c9;
+    background-color: #2f2f2f;
+}
+
+#usecases {
+    padding-top: 50px;
+    padding-bottom: 80px;
+}
+
+#usecases h2 {
+    padding-bottom: 30px;
+}
+
+/*
+div[class="row"] {
+    border: 1px dotted rgba(0, 0, 0, 0.5);
+}
+div[class^="col-"] {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+*/

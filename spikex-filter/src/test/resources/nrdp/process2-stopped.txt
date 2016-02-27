@@ -1,0 +1,9 @@
+   <checkresults>
+        <checkresult type="service">
+            <hostname>CHL-PC</hostname>
+            <servicename>process_spikex</servicename>
+            <state>3</state>
+            <output>CRITICAL: Spike.x is not running|'count'=0;0;0</output>
+        </checkresult>
+    </checkresults>
+    &cmd=submitcheck&token=1234secret!

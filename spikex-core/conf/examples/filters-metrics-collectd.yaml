@@ -1,0 +1,38 @@
+# ------------------------------------------------------------------------------
+# Spike.x - receive metrics from collectd
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Http.in', verticle: 'io.spikex.filter.input.HttpServer' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'input-collectd',
+        filters: [
+            {
+                filter: 'Http.in',
+                config: {
+                    host: 'localhost',
+                    port: 44120,
+                    input-format: 'collectd-json',
+                    add-tags: [ 'metric', 'collectd-metric' ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]

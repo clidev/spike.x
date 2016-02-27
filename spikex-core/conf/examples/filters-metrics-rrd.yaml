@@ -1,0 +1,140 @@
+# ------------------------------------------------------------------------------
+# Spike.x - create RRD graphs
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Rrd.out', verticle: 'io.spikex.filter.output.Rrd4j' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'output-rrd',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { 
+                filter: 'Rrd.out', 
+                worker: true,
+                config: { 
+                    name: 'system-metrics',
+                    directory: '%{#spikex.data}/rrd',
+                    start-time: '%{#now}',
+                    step: 60,
+                    version: 1,
+                    datasources: [
+                        load1m: {
+                                type: 'GAUGE',
+                                heartbeat: 120,
+                                min-value: 0.0,
+                                max-value: 100.0,
+                                dsname-value: 'system.load',
+                                rule: { match-field: '@subgroup', value-equals: 'avg_1m' }
+                            },                    
+                        mem: {
+                                type: 'GAUGE',
+                                heartbeat: 120,
+                                min-value: 0.0,
+                                max-value: 100.0,
+                                dsname-value: 'system.memory',
+                                rule: { match-field: '@subgroup', value-equals: 'used_perc' }
+                            }
+                    ],
+                    archives: [
+                        {
+                            function: 'AVERAGE',
+                            xff: 0.5,
+                            steps: 1,
+                            rows: 259200
+                        },
+                        {
+                            function: 'AVERAGE',
+                            xff: 0.5,
+                            steps: 5,
+                            rows: 259200
+                        },
+                        {
+                            function: 'MIN',
+                            xff: 0.5,
+                            steps: 15,
+                            rows: 259200
+                        },
+                        {
+                            function: 'MAX',
+                            xff: 0.5,
+                            steps: 15,
+                            rows: 259200
+                        }
+                    ],
+                    update-interval: 10000, # How often to create graph (ms)
+                    graphs: [
+                        {
+                            name: 'system-metrics',
+                            directory: '%{#spikex.data}/graphs',
+                            title: 'System load and memory usage',
+                            image-format: 'PNG',
+                            width: 800,
+                            height: 480,
+                            auto-scale: false,
+                            auto-scale-max: true,
+                            anti-aliasing: true,
+                            text-anti-aliasing: true,
+                            draw-xgrid: true,
+                            draw-ygrid: true,
+                            base: 1000.0,
+                            logarithmic: false,
+                            min-value: 0.0,
+                            max-value: 100.0,
+                            enable-legend: true,
+                            enable-minor-grid: true,
+                            only-graph: false,
+                            rigid: false,
+                            hide-signature: true,
+                            locale: 'en_US',
+                            unit: '%',
+                            units-exponent: 0,
+                            start-time: '%{#now(-5m)}',
+                            end-time: '%{#now}',
+                            vertical-label: 'total usage (%)',
+                            datasources: [
+                                { name: 'load', datasource: 'load1m', function: 'AVERAGE' },
+                                { name: 'mem', datasource: 'mem', function: 'AVERAGE' }
+                            ],
+                            colors: [
+                                # Grafene theme
+                                { name: 'BACK', color: 0x151515 },
+                                { name: 'FRAME', color: 0x1E1E1E },
+                                { name: 'CANVAS', color: 0x1E1E1E },
+                                { name: 'FONT', color: 0xBBBFC2 },
+                                { name: 'ARROW', color: 0x444444 },
+                                { name: 'SHADEA', color: 0x1E1E1E },
+                                { name: 'SHADEB', color: 0x1E1E1E },
+                                { name: 'GRID', color: 0x333333 },
+                                { name: 'MGRID', color: 0x444444 }
+                            ],
+                            comments-footer: [ 'Generated by Spike.X (%{#date})\c' ],
+                            lines: [
+                                { name: 'load', color: 0x6AD2DF, legend: 'Load avg (1 min)' },
+                                { name: 'mem', color: 0xE44446, legend: 'Memory usage\c' }
+                            ],
+                            gprints: [
+                                { name: 'load', function: 'MIN', format: 'Load min = %10.3f %s\r' },
+                                { name: 'load', function: 'MAX', format: 'Load max = %10.3f %s\r' }
+                            ],
+                            hrules: [
+                                { value: 75.0, color: 0xE45D24, legend: '75%\l' },
+                                { value: 100.0, color: 0xE42124, legend: '100%\l' }
+                            ],
+                            percentiles: [
+                                { name: 'load95', datasource: 'load', percent: 95.0 }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+]

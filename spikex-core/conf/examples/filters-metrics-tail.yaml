@@ -1,0 +1,108 @@
+# ------------------------------------------------------------------------------
+# Spike.x - collect metrics and events from a log file
+# ------------------------------------------------------------------------------
+
+modules: [
+    { 
+      module: 'io.spikex~spikex-filter',
+      filters: [ 
+            { alias: 'Grok', verticle: 'io.spikex.filter.Grok' },
+            { alias: 'Mutate', verticle: 'io.spikex.filter.Mutate' },
+            { alias: 'Limit', verticle: 'io.spikex.filter.Limit' },
+            { alias: 'Tail.in', verticle: 'io.spikex.filter.input.TailFile' },
+            { alias: 'Log.out', verticle: 'io.spikex.filter.output.Logback' }
+        ]
+    }
+]
+
+chains: [
+    {
+        chain: 'input-tail',
+        filters: [
+            {
+                filter: 'Tail.in', 
+                worker: true,
+                config: { 
+                    interval: 200,
+                    paths: [ '/var/log/catalina.log' ]
+               }
+            },
+            {
+                filter: 'Grok', 
+                config: { 
+                    match-lines: [
+                        {
+                            pattern: '%{JAVAEXCEPTION:line}',
+                            tags: [ 'error', 'exception' ]
+                        },
+                        {
+                            pattern: '%{DURATIONMS:line}',
+                            tags: [ 'duration' ]
+                        }
+                    ]
+               }
+            },
+            {
+                filter: 'Limit',
+                config: {
+                    discard-on-mismatch: false,
+                    schedules: { anytime: '* * * * *' },
+                    throttles: {
+                        one-per-sec: {
+                            rate: 1,
+                            interval: 1,
+                            unit: 'sec'
+                        }
+                    },
+                    rules: [
+                        {
+                            match-tag: 'duration',
+                            schedule: 'anytime',
+                            throttle: 'one-per-sec'
+                        }
+                    ]            
+                }
+            },
+            {
+                filter: 'Mutate',
+                config: {
+                    add-fields: { 
+                        '@interval': 15,
+                        '@subgroup': 'catalina_events',
+                        '@instance': '%{#host}',
+                        '@dsname': 'tail.catalina_events',
+                        '@dstype': 'GAUGE',
+                        '@value': 0.0
+                    },
+                    add-tags: [ 'metric', 'spikex-metric', 'log' ],
+                    modifiers: {
+                        event-error: {
+                            add-fields: { '@subgroup': 'catalina_errors', '@value': 1.0 }
+                        },
+                        event-duration: {
+                            add-fields: { '@subgroup': 'catalina_duration', '@value': '%{duration}' }
+                        }
+                    },
+                    rules: [
+                        { 
+                            match-tag: 'duration',
+                            modifier: 'event-duration'
+                        },
+                        {
+                            match-tag: 'error',
+                            modifier: 'event-error'
+                        }
+                    ]
+                }
+            },
+            { '%OutputAddress': 'metrics.spikex' }
+        ]
+    },
+    {
+        chain: 'output-log',
+        filters: [
+            { '%InputAddress': 'metrics.spikex' },
+            { filter: 'Log.out', config: { mdc-value: '%{@source}' } }
+        ]
+    }
+]
