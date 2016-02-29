@@ -6,6 +6,5 @@
     "author": "Christoffer Lindevall",
     "developers": ["clidev"],
     "keywords": ["spikex", "Spike.x", "worker"],
-    "homepage": "https://bitbucket.org/team-spikex/spikex",
-    "includes": "io.spikex~spikex-core~0.9.1"
+    "homepage": "https://github.com/clidev/spike.x"
 }

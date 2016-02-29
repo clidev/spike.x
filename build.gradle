@@ -78,7 +78,7 @@ subprojects {
                 "Implementation-Title": "${project.name}",
                 "Implementation-Artifact": "${project.name}-${project.version}.jar",
                 "Implementation-Version": "${project.version}",
-                "Implementation-URL": "https://bitbucket.org/team-spikex/spikex",
+                "Implementation-URL": "https://github.com/clidev/spike.x",
                 "Implementation-DocURL": "http://www.spikex.io",
                 "Implementation-Vendor": "NG Modular Oy",
                 "Implementation-License": "http://www.apache.org/licenses/LICENSE-2.0.txt",
@@ -120,7 +120,7 @@ def configurePom(def pom) {
         inceptionYear '2015'
         packaging 'jar'
 
-        url 'https://bitbucket.org/team-kumu/kumu'
+        url 'https://github.com/clidev/spike.x'
 
         developers {
             developer {
@@ -130,7 +130,7 @@ def configurePom(def pom) {
         }
 
         scm {
-            url 'https://bitbucket.org/team-kumu/kumu.git'
+            url 'https://github.com/clidev/spike.x'
         }
 
         licenses {
