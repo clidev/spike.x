@@ -203,8 +203,6 @@ public final class InfluxDb extends AsbtractHttpClient {
                                 // Ignore empty points (eg. empty value fields)
                                 if (point != null) {
                                     points.add(point);
-                                } else {
-                                    throw new RuntimeException("BOOOOOOOOOOM");
                                 }
                                 break; // Match found, handle next event
                             }
