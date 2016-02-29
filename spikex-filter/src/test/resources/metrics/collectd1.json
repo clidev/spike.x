@@ -1,0 +1,18 @@
+{
+    "@id": "6f197791-df17-11e5-84da-000c298d5e22",
+    "@source": "HttpServer",
+    "@timestamp": 1456772744000,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "input - collectd",
+    "@priority": "normal",
+    "@host": "zeus",
+    "@dsname": "tcpconns.tcp_connections",
+    "@dstype": "GAUGE",
+    "@dsprecision": "s",
+    "@subgroup": "LAST_ACK",
+    "@instance": "1521 - remote",
+    "@interval": 10,
+    "@value": 0,
+    "@tags": ["metric", "collectd-metric"]
+}

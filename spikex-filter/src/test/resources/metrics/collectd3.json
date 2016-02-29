@@ -1,0 +1,18 @@
+{
+    "@id": "6efa56d8-df17-11e5-84da-000c298d5e22",
+    "@source": "HttpServer",
+    "@timestamp": 1456772744000,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "input-collectd",
+    "@priority": "normal",
+    "@host": "zeus",
+    "@dsname": "tail.gauge",
+    "@dstype": "GAUGE",
+    "@dsprecision": "s",
+    "@subgroup": "app_operation_ms",
+    "@instance": "catalina_log",
+    "@interval": 10,
+    "@value": 0.0,
+    "@tags": ["metric", "collectd-metric"]
+}

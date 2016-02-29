@@ -1,0 +1,19 @@
+{
+    "@id": "6141a463-df14-11e5-ae7a-0050569a33a9",
+    "@source": "HttpServer",
+    "@timestamp": 1456771432870,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "input-nagios-nrdp",
+    "@priority": "normal",
+    "@host": "W8APPX10",
+    "@dsname": "system.memory",
+    "@dstype": "GAUGE",
+    "@dsprecision": "ms",
+    "@subgroup": "used",
+    "@instance": "-",
+    "@interval": "60000",
+    "@value": 6.353330372608E9,
+    "@tags": ["nagios", "spikex-metric"],
+    "service-name": "mem"
+}

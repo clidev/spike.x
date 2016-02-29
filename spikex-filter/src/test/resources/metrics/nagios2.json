@@ -1,0 +1,19 @@
+{
+    "@id": "695295d6-df17-11e5-ae7a-0050569a33a9",
+    "@source": "HttpServer",
+    "@timestamp": 1456772734893,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "input-nagios-nrdp",
+    "@priority": "normal",
+    "@host": "W8APPX21",
+    "@dsname": "filesystem",
+    "@dstype": "GAUGE",
+    "@dsprecision": "ms",
+    "@subgroup": "used",
+    "@instance": "D:\\",
+    "@interval": "60000",
+    "@value": 5.919538675712E9,
+    "@tags": ["nagios", "spikex-metric"],
+    "service-name": "disk_fixed"
+}

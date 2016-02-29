@@ -1,0 +1,18 @@
+{
+    "@id": "6c6b20f4-df17-11e5-ae7a-0050569a33a9",
+    "@source": "Jolokia",
+    "@timestamp": 1456772738000,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "jmx-metrics-jolokia",
+    "@priority": "normal",
+    "@host": "w8happ2:8080",
+    "@dsname": "java.lang.garbagecollector.ps.scavenge",
+    "@dstype": "GAUGE",
+    "@dsprecision": "s",
+    "@subgroup": "lastgcinfo_memoryusagebeforegc_codecache_used",
+    "@instance": "-",
+    "@interval": 30000,
+    "@value": 41880768,
+    "@tags": ["jmx", "metric", "spikex-metric", "jolokia"]
+}

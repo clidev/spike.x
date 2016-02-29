@@ -29,7 +29,7 @@ icon:bell[] Event monitoring and sending of notifications::
 * Log and send notifications to interested parties
 * Rule based sending of alarms
 
-CAUTION: Spike.x 0.9.0 is still in its infancy. It will take some time before it can be 
+CAUTION: Spike.x 0.9.1 is still in its infancy. It will take some time before it can be 
 considered production ready.
 
 TIP: We are planning to migrate to http://vertx.io[Vert.x 3] as soon as possible.
@@ -588,7 +588,7 @@ task works in Linux, Windows and OS X.
  ./gradlew izpack launch4j
 
 
-CAUTION: Spike.x 0.9.0 and Gradle 1.10 does not support Maven profiles. When
+CAUTION: Spike.x 0.9.x and Gradle 1.10 does not support Maven profiles. When
 resolving dependencies you get the following kind of errors:
 
 [source]

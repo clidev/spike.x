@@ -55,7 +55,6 @@ public class FiltersConfigTest {
         {"Tail.in", "io.spikex.filter.input.TailFile"},
         {"Nsq.out", "io.spikex.filter.output.Nsq"},
         {"NsqHttp.out", "io.spikex.filter.output.NsqHttp"},
-        {"Rrd.out", "io.spikex.filter.output.Rrd4j"},
         {"Es.out", "io.spikex.filter.output.Elasticsearch"},
         {"InfluxDB.out", "io.spikex.filter.output.InfluxDb"}
     };

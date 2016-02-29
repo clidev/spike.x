@@ -1,0 +1,18 @@
+{
+    "@id": "6aacf5bd-df17-11e5-97c8-000c298f5e5c",
+    "@source": "Metrics",
+    "@timestamp": 1456772737163,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "jvm-metrics-spikex",
+    "@priority": "normal",
+    "@host": "zeus.local.net",
+    "@dsname": "spikex.jvm",
+    "@dstype": "GAUGE",
+    "@dsprecision": "s",
+    "@subgroup": "gc_G1-Young-Generation_time",
+    "@instance": "-",
+    "@interval": 15000,
+    "@value": 312349,
+    "@tags": ["metric", "spikex-metric-oshi", "oshi"]
+}

@@ -20,7 +20,6 @@ modules: [
             { alias: 'Tail.in', verticle: 'io.spikex.filter.input.TailFile' },
             { alias: 'Nsq.out', verticle: 'io.spikex.filter.output.Nsq' },
             { alias: 'NsqHttp.out', verticle: 'io.spikex.filter.output.NsqHttp' },
-            { alias: 'Rrd.out', verticle: 'io.spikex.filter.output.Rrd4j' },
             { alias: 'Es.out', verticle: 'io.spikex.filter.output.Elasticsearch' },
             { alias: 'InfluxDB.out', verticle: 'io.spikex.filter.output.InfluxDb' }
         ]
@@ -214,18 +213,19 @@ chains: [
                     retention-duration: '180d',
                     consistency: 'ALL',
                     series: [
-                        { 
-                            name: 'cpu_load', 
-                            rule: { match-tag: 'collectd', match-field: 'plugin', value-equals: 'cpu' },
+                        {
+                            name: '%{@dsname}',
+                            rule: { match-tag: 'collectd-metric' },
                             time-field: '@timestamp',
-                            value-fields: [ { name: '@cpu.total', type: 'float' } ],
-                            add-tags: { 
-                                        host: '%{@host}', 
-                                        datasource: '%{plugin}',
-                                        instance: '%{plugin-instance}', 
-                                        type: '%{type}%{type-instance}',
-                                        zone: 'DMZ' 
-                                        } 
+                            value-fields: [ { name: '@value', type: '%{@dstype}' } ],
+                            add-tags: {
+                                        host: '%{@host}',
+                                        subgroup: '%{@subgroup}',
+                                        instance: '%{@instance}',
+                                        interval: '%{@interval}',
+                                        dsname: '%{@dsname}',
+                                        dstype: '%{@dstype}'
+                            }
                         },
                         { 
                             name: '%{host}/%{plugin}/%{plugin-instance}/%{type}/%{type-instance}', 
@@ -241,17 +241,40 @@ chains: [
                                         } 
                         },
                         { 
-                            name: 'io_load', 
-                            rule: { match-tag: 'metric' },
+                            name: '%{@dsname}', 
+                            rule: { 
+                                    match-tag: 'spikex-metric', 
+                                    match-field: '@dstype',  
+                                    value-in: [ 'GAUGE', 'DERIVE', 'COUNTER', 'ABSOLUTE' ] # Accept only numerical values (no strings)
+                                    },
                             time-field: '@timestamp',
-                            value-fields: [ { name: 'io.total', type: 'integer' } ],
+                            value-fields: [ { name: '@value', type: '%{@dstype}' } ],
                             add-tags: { 
                                         host: '%{@host}', 
-                                        datasource: 'io',
-                                        instance: '0',
-                                        type: '',
-                                        zone: 'SAN' 
-                                        } 
+                                        subgroup: '%{@subgroup}',
+                                        instance: '%{@instance}',
+                                        interval: '%{@interval}',
+                                        dsname: '%{@dsname}',
+                                        dstype: '%{@dstype}'
+                            } 
+                        },
+                        {
+                            name: 'oshi.%{@dsname}',
+                            rule: {
+                                    match-tag: 'spikex-metric-oshi',
+                                    match-field: '@dstype',
+                                    value-in: [ 'GAUGE', 'DERIVE', 'COUNTER', 'ABSOLUTE' ] # Accept only numerical values (no strings)
+                                    },
+                            time-field: '@timestamp',
+                            value-fields: [ { name: '@value', type: '%{@dstype}' } ],
+                            add-tags: {
+                                        host: '%{@host}',
+                                        subgroup: '%{@subgroup}',
+                                        instance: '%{@instance}',
+                                        interval: '%{@interval}',
+                                        dsname: '%{@dsname}',
+                                        dstype: '%{@dstype}'
+                            }
                         }
                     ]
                 }

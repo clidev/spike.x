@@ -203,6 +203,8 @@ public final class InfluxDb extends AsbtractHttpClient {
                                 // Ignore empty points (eg. empty value fields)
                                 if (point != null) {
                                     points.add(point);
+                                } else {
+                                    throw new RuntimeException("BOOOOOOOOOOM");
                                 }
                                 break; // Match found, handle next event
                             }
@@ -324,6 +326,8 @@ public final class InfluxDb extends AsbtractHttpClient {
 
             // Convert value to string
             String value = String.valueOf(event.getValue(name));
+logger().info("============================== name: {} value: {} type: {}", name, value, type);
+            
             if (value.length() > 0) {
 
                 // Consider data types
@@ -338,14 +342,17 @@ public final class InfluxDb extends AsbtractHttpClient {
                             point.append("i");
                             foundValues = true;
                         }
+logger().info("------- INTEGER found: {}", foundValues);
                         break;
                     case TYPE_GAUGE:
                         // Ensure that value is numerical
                         if (Numbers.isDecimal(value)
-                                || Numbers.isInteger(value)) {
+                                || Numbers.isInteger(value)
+                                || Numbers.isFloatingPoint(value)) {
                             point.append(value.toLowerCase()); // as-is, but use lower case 'exponent constant' (float64)
                             foundValues = true;
                         }
+logger().info("------- GAUGE found: {}", foundValues);
                         break;
                     // Escape double-quotes and surround with quotes (InfluxDB 0.10+)
                     case INFLUXDB_DATA_TYPE_STRING:
@@ -354,10 +361,12 @@ public final class InfluxDb extends AsbtractHttpClient {
                         point.append(escapeStringValue(value));
                         point.append("\"");
                         foundValues = true;
+logger().info("------- STRING found: {}", foundValues);
                         break;
                     default:
                         point.append(value.toLowerCase()); // as-is, but use lower case 'exponent constant' (float64)
                         foundValues = true;
+logger().info("------- OTHER found: {}", foundValues);
                         break;
                 }
             }

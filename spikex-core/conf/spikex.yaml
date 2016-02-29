@@ -3,5 +3,5 @@
 # ------------------------------------------------------------------------------
 
 modules:
-    - { id: io.spikex~spikex-filter~0.9.0 }
-    - { id: io.spikex~spikex-metrics~0.9.0, config: { update-interval: 15000 }}
+    - { id: io.spikex~spikex-filter~0.9.1 }
+    - { id: io.spikex~spikex-metrics~0.9.1, config: { update-interval: 15000 }}

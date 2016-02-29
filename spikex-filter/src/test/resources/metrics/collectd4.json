@@ -1,0 +1,18 @@
+{
+    "@id": "6ef9456a-df17-11e5-84da-000c298d5e22",
+    "@source": "HttpServer",
+    "@timestamp": 1456772738000,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "input-collectd",
+    "@priority": "normal",
+    "@host": "zeus",
+    "@dsname": "filesystem",
+    "@dstype": "GAUGE",
+    "@dsprecision": "s",
+    "@subgroup": "root",
+    "@instance": "-",
+    "@interval": 10,
+    "@value": 1.32744E10,
+    "@tags": ["metric", "collectd-metric"]
+}

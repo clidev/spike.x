@@ -1,0 +1,18 @@
+{
+    "@id": "69ffc5cf-df17-11e5-84da-000c298d5e22",
+    "@source": "Jolokia",
+    "@timestamp": 1456772736000,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "jmx-metrics-jolokia",
+    "@priority": "normal",
+    "@host": "127.0.0.1:8080",
+    "@dsname": "java.lang.memory",
+    "@dstype": "GAUGE",
+    "@dsprecision": "s",
+    "@subgroup": "heapmemoryusage_used",
+    "@instance": "-",
+    "@interval": 30000,
+    "@value": 366629136,
+    "@tags": ["jmx", "metric", "spikex-metric", "jolokia"]
+}

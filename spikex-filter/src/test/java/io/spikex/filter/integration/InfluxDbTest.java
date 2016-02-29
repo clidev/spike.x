@@ -28,8 +28,6 @@ import static io.spikex.core.AbstractVerticle.CONF_KEY_LOCAL_ADDRESS;
 import static io.spikex.core.AbstractVerticle.CONF_KEY_NODE_NAME;
 import static io.spikex.core.AbstractVerticle.CONF_KEY_TMP_PATH;
 import static io.spikex.core.AbstractVerticle.CONF_KEY_USER;
-import static io.spikex.core.helper.Events.DSTIME_PRECISION_MIN;
-import static io.spikex.core.helper.Events.EVENT_FIELD_DSTIME_PRECISION;
 import io.spikex.core.util.HostOs;
 import io.spikex.core.util.process.ChildProcess;
 import io.spikex.core.util.process.DefaultProcessHandler;
@@ -40,11 +38,13 @@ import io.spikex.filter.output.InfluxDb;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import junit.framework.Assert;
@@ -66,6 +66,7 @@ public class InfluxDbTest extends TestVerticle implements Handler<Long> {
 
     private int m_counter;
     private static final CountDownLatch m_latch = new CountDownLatch(17);
+    private static final List<JsonObject> m_metrics = new ArrayList();
 
     private static final String FILTER_INFLUXDB_NAME = "InfluxDB.out";
     private static final String FILTER_SOURCE_ADDRESS = "InputInfluxDbFilter." + new UUID().toString();
@@ -78,7 +79,7 @@ public class InfluxDbTest extends TestVerticle implements Handler<Long> {
     private static final String TYPE_VALUE = "";
     private static final String TYPE_INSTANCE_KEY = "type-instance";
     private static final String TYPE_INSTANCE_VALUE = "-";
-    
+
     private static final String CONF_NAME = "filters";
 
     private static final Logger m_logger = LoggerFactory.getLogger(InfluxDbTest.class);
@@ -98,6 +99,17 @@ public class InfluxDbTest extends TestVerticle implements Handler<Long> {
             JsonObject config = createBaseConfig();
             config.mergeIn(loadInfluxDbConfig(config));
 
+            Path metricsPath = Paths.get("build/resources/test/metrics").toAbsolutePath();
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(metricsPath, "*.json")) {
+                for (Path file : dirStream) {
+                    m_logger.debug("Loading file: {}", file);
+                    JsonObject json = new JsonObject(loadFileContents(file));
+                    m_metrics.add(json);
+                }
+            } catch (IOException e) {
+                m_logger.error("Failed to read metric file(s)", e);
+            }
+
             // Start two InfluxDB servers
             new InfluxDbThread("influxdb-thread1", "influxdb1.toml", "influxdb1").start();
             new InfluxDbThread("influxdb-thread2", "influxdb2.toml", "influxdb2").start();
@@ -116,7 +128,7 @@ public class InfluxDbTest extends TestVerticle implements Handler<Long> {
                         }
                     });
 
-            vertx.setPeriodic(50L, this); // Generate events once every 150 ms
+            vertx.setPeriodic(150L, this); // Generate events once every 150 ms
         } else {
             // Stop test immediately
             VertxAssert.testComplete();
@@ -125,23 +137,18 @@ public class InfluxDbTest extends TestVerticle implements Handler<Long> {
 
     @Override
     public void handle(final Long timerId) {
-        if(m_latch.getCount() == 0) {
-            if (m_counter++ > 50) {
+        if (m_latch.getCount() == 0) {
+            if (m_counter++ > 80) {
                 // Stop test
                 VertxAssert.testComplete();
             } else {
                 //
                 // Generate test events
-                //                            
-                Map<String, Object> influxDbFields = new HashMap();
-                influxDbFields.put(PLUGIN_KEY, PLUGIN_VALUE);
-                influxDbFields.put(PLUGIN_INSTANCE_KEY, PLUGIN_INSTANCE_VALUE);
-                influxDbFields.put(TYPE_KEY, TYPE_VALUE);
-                influxDbFields.put(TYPE_INSTANCE_KEY, TYPE_INSTANCE_VALUE);
-                influxDbFields.put(EVENT_FIELD_DSTIME_PRECISION, DSTIME_PRECISION_MIN);
-
-                JsonObject event = EventCreator.createBatch("collectd", influxDbFields);
-                vertx.eventBus().publish(FILTER_SOURCE_ADDRESS, event);
+                //
+                for (JsonObject json : m_metrics) {
+                    JsonObject event = EventCreator.createBatch("metrics", json.toMap(), 5);
+                    vertx.eventBus().publish(FILTER_SOURCE_ADDRESS, event);
+                }
             }
         }
     }
@@ -194,6 +201,14 @@ public class InfluxDbTest extends TestVerticle implements Handler<Long> {
         config.putString(CONF_KEY_USER, "spikex");
         m_logger.info("Host operating system: {}", HostOs.operatingSystemFull());
         return config;
+    }
+
+    private String loadFileContents(final Path filePath) {
+        try {
+            return new String(Files.readAllBytes(filePath));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static class InfluxDbThread extends Thread {

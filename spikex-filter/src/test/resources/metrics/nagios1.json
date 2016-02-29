@@ -1,0 +1,19 @@
+{
+    "@id": "69e86d31-df17-11e5-ae7a-0050569a33a9",
+    "@source": "HttpServer",
+    "@timestamp": 1456772735875,
+    "@timezone": "UTC",
+    "@type": "metric",
+    "@chain": "input-nagios-nrdp",
+    "@priority": "normal",
+    "@host": "W2008APX4",
+    "@dsname": "system.load",
+    "@dstype": "GAUGE",
+    "@dsprecision": "ms",
+    "@subgroup": "5m_avg_perc",
+    "@instance": "total",
+    "@interval": "60000",
+    "@value": 2,
+    "@tags": ["nagios", "spikex-metric"],
+    "service-name": "load_total"
+} 
