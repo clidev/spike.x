@@ -560,7 +560,10 @@ table.CodeRay td.code>pre{padding:0}
 <ul class="sectlevel2">
 <li><a href="#use-case-influxdb-grafana">5.1. Using InfluxDB and Grafana for monitoring</a></li>
 <li><a href="#use-case-elasticsearch-kibana">5.2. Using Elasticsearch and Kibana for event analysis</a></li>
-<li><a href="#monitoring-and-sending-of-notifications">5.3. Monitoring and sending of notifications</a></li>
+<li><a href="#use-case-notifications">5.3. Monitoring and sending of notifications</a></li>
+<li><a href="#use-case-influxdb-datapoint-replication">5.4. InfluxDB data point replication</a></li>
+<li><a href="#use-case-log-tailing-spikex">5.5. Tailing logs using Spike.x</a></li>
+<li><a href="#use-case-log-tailing-nxlog">5.6. Tailing logs using NXlog</a></li>
 </ul>
 </li>
 <li><a href="#troubleshooting">6. Troubleshooting</a></li>
@@ -631,7 +634,7 @@ for sending of notifications and for storing of metrics and events in various ba
 <i class="fa icon-caution" title="Caution"></i>
 </td>
 <td class="content">
-Spike.x 0.9.0 is still in its infancy. It will take some time before it can be
+Spike.x 0.9.2 is still in its infancy. It will take some time before it can be
 considered production ready.
 </td>
 </tr>
@@ -705,7 +708,7 @@ of some of the built-in filters:</p>
 <p>Grok - matches regexps against an event field</p>
 </li>
 <li>
-<p>HttpServer - receives events via HTTP (supports collectd wtite-http plugin and Nagios NRDP)</p>
+<p>HttpServer - receives events via HTTP (supports collectd and Nagios NRDP)</p>
 </li>
 <li>
 <p>Batch - creates a batch of events before publishing</p>
@@ -954,7 +957,7 @@ Please note that Spike.x requires JDK 1.8 or newer. We test Spike.x on the <a hr
 <div class="sect2">
 <h3 id="deployment-models">2.1. Deployment models</h3>
 <div class="paragraph">
-<p>We present InfluxDB and Grafana for storage and visualization in the deployment diagrams below but you could also use
+<p>InfluxDB and Grafana are used for storage and visualization in the deployment diagrams below but you could also use
 <a href="#use-case-elasticsearch-kibana">Elasticsearch and Kibana</a>.</p>
 </div>
 <div class="paragraph">
@@ -990,12 +993,12 @@ Any service that exposes the InfluxDB HTTP API should work with Spike.x. The set
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="shell">wget https://bintray.com/artifact/download/spikex/generic/spikex-0.9.0-installer.jar</code></pre>
+<pre class="CodeRay highlight"><code data-lang="shell">wget https://bintray.com/artifact/download/spikex/generic/spikex-0.9.2-installer.jar</code></pre>
 </div>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="shell">curl -O https://bintray.com/artifact/download/spikex/generic/spikex-0.9.0-installer.jar</code></pre>
+<pre class="CodeRay highlight"><code data-lang="shell">curl -O https://bintray.com/artifact/download/spikex/generic/spikex-0.9.2-installer.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1003,7 +1006,7 @@ Any service that exposes the InfluxDB HTTP API should work with Spike.x. The set
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="shell">sudo java -jar spikex-0.9.0-installer.jar</code></pre>
+<pre class="CodeRay highlight"><code data-lang="shell">sudo java -jar spikex-0.9.2-installer.jar</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1276,7 +1279,7 @@ Inspect the <code>events.log</code> file that&#8217;s stored in the <code>log</c
 <div class="paragraph">
 <p>Spike.x provides the following standard modules that are always available.</p>
 </div>
-<table class="tableblock frame-all grid-all" style="width: 60%;">
+<table class="tableblock frame-all grid-all spread">
 <caption class="title">Table 2. Standard modules</caption>
 <colgroup>
 <col style="width: 50%;">
@@ -1310,40 +1313,406 @@ Inspect the <code>events.log</code> file that&#8217;s stored in the <code>log</c
 <div class="sect2">
 <h3 id="module-core">3.1. Core</h3>
 <div class="paragraph">
-<p>home-path
-base-path
-data-path
-run-path
-var-path?
-log-path
-conf-path</p>
+<p>Technically core is not deployed as a Vert.x module. It&#8217;s a library that&#8217;s automatically available to all other modules.</p>
+</div>
+<div class="paragraph">
+<p>Core contains the <code>Main</code> class of Spike.x that is used to bootstrap the Vert.x container.</p>
+</div>
+<div class="paragraph">
+<p>The <code>spikex.home</code> Java system property should be defined when starting Spike.x.
+The property value is also used for the <code>vertx.home</code> property required by the Vert.x container.</p>
+</div>
+<div class="paragraph">
+<p>The following Java system properties are used by Spike.x during bootstrap:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spikex.home</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The home driectory of Spike.x</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spikex.user</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process user name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spikex</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spikex.pidfile</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process PID file</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/var/run/spikex.pid</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spikex.module.deploy.secs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How long to wait (secs) for all modules to be deployed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">45</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">spikex.module.undeploy.secs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How long to wait (secs) for all modules to be undeployed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">45</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The <code>Main</code> class supports the following command line arguments:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Option</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-conf</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Directory of configuration files</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">vertx.home/conf</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Directory of data files</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">vertx.home/data</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-tmp</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Directory of temporary files</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">vertx.home/tmp</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-umask</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Umask used when creating new files</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">022</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-daemon</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Start Spike.x as a daemon</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">false</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">-version</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Output Spike.x version information and exit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The log directory is defined by the <code>logback.logdir</code> Java system property.</p>
 </div>
 <div class="sect3">
 <h4 id="configuration">3.1.1. Configuration</h4>
-
+<div class="paragraph">
+<p>The <code>spikex.yaml</code> is the main configuration file of Spike.x. It simply lists the modules that should be deployed.</p>
+</div>
+<div class="listingblock">
+<div class="title">spikex.yaml</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>modules:
+    - { id: io.spikex~spikex-filter~0.9.2 }
+    - { id: io.spikex~spikex-metrics~0.9.2, config: { update-interval: 15000 }}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>update-interval</code> option defines how often, in milliseconds, the metrics module should update its state.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="module-filter">3.2. Filter</h3>
-<div class="sect3">
-<h4 id="configuration-2">3.2.1. Configuration</h4>
 <div class="paragraph">
-<p>ChainA: filter&#8594;filter&#8594;filter</p>
+<p>The filter module provides all the standard filters that enable Spike.x to perform streaming of events.
+Events can be received using input filters, manipulated using filters that take an input and an output and finally stored in some backend using output filters.</p>
 </div>
+<div class="paragraph">
+<p>Filters and connected together using chains. One chain can contain one or more filters. Filters communicate with each other using <code>addresses</code>.
+Filters can have an input address, an output address or both. Events flow from one filter to the next one in a chain.</p>
+</div>
+<div class="paragraph">
+<p>There are two special built-in filters that affect the input or output address of a filter:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Special filter</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">%InputAddress</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sets the input address of the next filter</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">%OutputAddress</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sets the output address of the previous filter</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>These special filters enable us to define complex event routing between standard filters.
+A typical case is when you want to have multiple input chains that all output to the same backend.
+You can then define one filter configuration file per input chain and have one configuration file for the output chain.</p>
+</div>
+<div class="sect3">
+<h4 id="event">3.2.1. Event</h4>
+<div class="paragraph">
+<p>Events produces by filters contain some mandatory fields.
+These fields must always be available in events generated by any standard input filter:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Event field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@id</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UUID of the event</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@host</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The host identifier - free form string (short string)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The source of the event - free form string (short string)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@timestamp</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event timestamp - the number of milliseconds that have elapsed since 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970, not counting leap seconds.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@timezone</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Event timezone - by default UTC</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The type of the event - must be one of the predefined event types: metric, notification, batch</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@tags</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The event tags - free form list of strings</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@chain</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The event chain - chain name of event</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@priority</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The event priority or severity - must be on of the pre-defined priorities: low, normal, high</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>In addition metric events usually contain these fields:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Event field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@value</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric event value</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@dsname</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric event datasource name</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@dstype</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric event datasource type - must be one of the pre-defined types: GAUGE, COUNTER, STRING</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@dsprecision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric event datasource timestamp precision - must be one of the pre-defined types: n, u, ms, s, m, h</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@interval</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric event sampling interval in milliseconds - use "-" if not applicable</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@instance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric event data instance - use "-" if not applicable</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@subgroup</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The metric event data subgroup - use "-" if not applicable</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>These are mandatory fields for notification events:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Event field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@title</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The notification event title or subject - free form string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@message</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The notification event message - free form string</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">@destinations</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The notification event destinations - list of destination addresses</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="configuration-2">3.2.2. Configuration</h4>
+<div class="paragraph">
+<p>The filter module supports one or more configuration files that start with the <code>filters</code> prefix.
+There are many example files in the <code>conf/examples</code> directory that you can use as such or with some modifications.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+The filter module tries to automatically reload a modified configuration file. This might not always succeed.
+Please verify that the modifications were successfully loaded from the <code>spikex.log</code> file.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Many filters support the <code>update-interval</code> configuration option. It defines the interval of a specific filter operation.
+This can be given as an integer of milliseconds or using the following shorthand notation:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Notation</th>
+<th class="tableblock halign-left valign-top">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;integer&gt;s</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Interval in seconds. Example: '10s'</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;integer&gt;m</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Interval in minutes. Example: '5m'</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;integer&gt;h</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Interval in hours. Example: '1h'</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <div class="sect2">
 <h3 id="module-metrics">3.3. Metrics</h3>
+<div class="paragraph">
+<p>The metrics module publishes resource data about the Spike.x JVM and the operating system.
+This can be useful if you want to monitor Spike.x resource usage.</p>
+</div>
 <div class="sect3">
 <h4 id="configuration-3">3.3.1. Configuration</h4>
-
+<div class="paragraph">
+<p>There is no configuration file for the metrics module.
+Instead you use the <code>Metrics</code> filter to grab the published Spike.x JVM metrics like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code>filter: 'Metrics',
+config: {
+    update-interval: '60s',
+    metric-selector: 'system.load',
+    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Please see the <code>filters-metrics-oshi.yaml</code> example file for details.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="module-notifier">3.4. Notifier</h3>
+<div class="paragraph">
+<p>The notifier module can be used to publish notifications to interested parties.
+Currently this module supports sending of notifications to files, email addresses or to flowdock channels.
+It supports templates, schedules, destinations and rules.</p>
+</div>
+<div class="paragraph">
+<p>By default the notifier module listens to the <code>spikex.notifier</code> address for events.</p>
+</div>
 <div class="sect3">
 <h4 id="configuration-4">3.4.1. Configuration</h4>
-
+<div class="paragraph">
+<p>The notifier module reads the <code>notifier.yaml</code> configuration file.</p>
+</div>
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+The notifier module tries to automatically reload a modified configuration file. This might not always succeed.
+Please verify that the modifications were successfully loaded from the <code>spikex.log</code> file.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
@@ -1351,39 +1720,410 @@ conf-path</p>
 <div class="sect1">
 <h2 id="filters">4. Filters</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>In this section we present the configuration options for the standard filters.</p>
+</div>
 <div class="sect2">
 <h3 id="batch">4.1. Batch</h3>
+<div class="paragraph">
+<p>Group events into a batch. The batch is contained in-memory and is not persisted during restarts.
+The batch event contains three fields in addition to the mandatory fields: a type field, the amount of events it contains and a list of events.</p>
+</div>
 <div class="sect3">
 <h4 id="configuration-5">4.1.1. Configuration</h4>
-
+<table class="tableblock frame-all grid-all spread">
+<caption class="title">Table 3. Batch filter options</caption>
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Option</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">update-interval</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How often to publish the current batch if max batch size has not been reached</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">max-batch-size</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How many events to capture before publishing the batch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1000</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="title">Batch example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>filter: 'Batch',
+config: {
+    update-interval: 500,
+    max-batch-size: 100
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="command">4.2. Command</h3>
+<div class="paragraph">
+<p>Execute a command. Command supports two modes: input and output. In input mode it executes a command and reads the
+command output line-by-line using a DSV line parser. In output mode it passes an event to the standard input of the command.</p>
+</div>
 <div class="sect3">
 <h4 id="configuration-6">4.2.1. Configuration</h4>
-
+<table class="tableblock frame-all grid-all spread">
+<caption class="title">Table 4. Command filter options</caption>
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Option</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">update-interval</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How often to execute the defined command</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">command</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The command to execute</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">args</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The list of command arguments</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">timeout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How long in milliseconds to wait for the command to exit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2500</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">encoding</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">What character encoding to use when parsing command output</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UTF-8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">max-line-count</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maximum amount of lines to read from the command output</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4000</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">skip-lines-start</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How many lines to skip from the start of the command output before parsing lines</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">skip-lines-end</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How many lines to skip from the end of the command output</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">output-format</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The output format definition</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The output format type</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">dsv</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="title">Command input example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>filter: 'Command',
+config: {
+    update-interval: 5000,
+    command: '/bin/cat',
+    args: [ '/tmp/file.txt' ],
+    output-format: {
+        type: 'dsv'
+    }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Command output example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>filter: 'Command',
+config: {
+    command: '/bin/cat',
+    args: [ '/tmp/events.json' ]
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="grok">4.3. Grok</h3>
 <div class="sect3">
 <h4 id="configuration-7">4.3.1. Configuration</h4>
-
+<div class="listingblock">
+<div class="title">Grok example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>filter: 'Grok',
+config: {
+        patterns: [
+            'file:%{#spikex.conf}/grok/base.grok',
+            'file:%{#spikex.conf}/grok/log.grok'
+        ],
+        input-field: '@message',
+        output-field: '@message',
+        group: {
+            fields: ['class', 'method', 'message', 'thread', 'level',
+                       'year', 'month', 'day', 'hour', 'minute', 'second'],
+            output-field: '@fields'
+        },
+        match-lines: [
+           {
+            pattern: '%{JAVAJBOSS4LOG:line}',
+            tags: ['log', 'java'],
+            ignore: ['JAVALVLCLS']
+           }
+        ],
+        multi-line: {
+            pattern: '%{JAVAEXCEPTION:line}',
+            tags: ['error', 'exception'],
+            segment-field: 'class'
+        }
+    }
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="limit">4.4. Limit</h3>
+<div class="paragraph">
+<p>Limit the amount of events per time unit if a rule is matched. A rule defines
+which events to match, when to match and the event rate limit.</p>
+</div>
 <div class="sect3">
 <h4 id="configuration-8">4.4.1. Configuration</h4>
+<table class="tableblock frame-all grid-all spread">
+<caption class="title">Table 5. Limit filter options</caption>
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Option</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">database-name</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The name of the limit state database</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">limit.db</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">database-compact-on-startup</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flag that controls database compaction on startup</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">discard-on-mismatch</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Discard event if rule does not match</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">true</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">schedules</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The schedules when the rule is active</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">throttles</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The rate limiting definitions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rules</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The event matching and throttle rules</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect4">
+<h5 id="schedule">Schedule</h5>
 
+</div>
+<div class="sect4">
+<h5 id="throttle">Throttle</h5>
+
+</div>
+<div class="sect4">
+<h5 id="rule">Rule</h5>
+<div class="listingblock">
+<div class="title">Limit example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>filter: 'Limit',
+config: {
+    database-name: 'limit.db',
+    database-compact-on-startup: true,
+    discard-on-mismatch: false,
+    schedules: { anytime: '* * * * *' },
+    throttles: {
+        one-per-15-minutes: {
+            rate: 1,
+            interval: 15,
+            unit: 'min'
+        }
+    },
+    rules: [
+        {
+            match-tag: 'ALARM',
+            schedule: 'anytime',
+            throttle: 'one-per-15-minutes'
+        }
+    ]
+}</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="mutate">4.5. Mutate</h3>
+<div class="paragraph">
+<p>Modifies an event by adding or removing fields or tags. Also supports renaming of fields.
+The modification can be done to every event or to specific events based on a rule.</p>
+</div>
 <div class="sect3">
 <h4 id="configuration-9">4.5.1. Configuration</h4>
+<table class="tableblock frame-all grid-all spread">
+<caption class="title">Table 6. Mutate filter options</caption>
+<colgroup>
+<col style="width: 33%;">
+<col style="width: 33%;">
+<col style="width: 33%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Option</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">add-fields</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Map of fields to add to any event</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">add-tags</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of tags to add to any event</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">del-fields</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Map of fields to remove from any event</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">del-tags</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of tags to remove from any event</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">renames</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Map of renaming definitions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">modifiers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The modifier definitions</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">rules</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The event matching rules</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&lt;none&gt;</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect4">
+<h5 id="rename">Rename</h5>
 
+</div>
+<div class="sect4">
+<h5 id="modifier">Modifier</h5>
+
+</div>
+<div class="sect4">
+<h5 id="rule-2">Rule</h5>
+<div class="listingblock">
+<div class="title">Mutate example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code>filter: 'Mutate',
+config: {
+    add-fields: {
+        cpu.total: '%{#metric.system.cpu.total.time}',
+        io.total: '%{#metric.system.cpu.total.time}',
+        mem.free: '%{#metric.system.memory.free.perc}',
+        mem.jvm.use: '%{#metric.jvm.memory.perc}',
+        '@type': 'spikex-process-metrics'
+    },
+    add-tags: [ 'system', 'load', 'cpu', 'mem', 'metric' ],
+    modifiers: {
+        low-resource: {
+            add-tags: [ 'ALARM' ],
+            add-fields: { '@alarm': 'low resource' }
+        },
+        no-files-alarm: {
+            add-tags: [ 'ALARM' ],
+            add-fields: { '@alarm': 'no files in directory for last 5 min' }
+        }
+    },
+    rules: [
+        {
+            match-field: 'mem.free',
+            value-lte: 10,
+            modifier: 'low-resource'
+        },
+        {
+            match-field: 'cpu.total',
+            value-gt: 95,
+            modifier: 'low-resource'
+        },
+        {
+            match-tag: 'dir-watcher',
+            match-field: 'dir-name',
+            value-in: [ 'xml-in', 'json-in' ],
+            variables: {
+                        'count': '%{file-count}',
+                        'tm': '%{latest-timestamp}'
+                    },
+            # No files for 5 mins
+            expression: 'if(count = 0 &amp;&amp; #now(-5m) &gt; tm)',
+            modifier: 'no-files-alarm'
+        }
+    ]
+}</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -1506,11 +2246,29 @@ This can be seen as a form of log shipping where we pre-filter the events to onl
 </div>
 </div>
 <div class="sect2">
-<h3 id="monitoring-and-sending-of-notifications">5.3. Monitoring and sending of notifications</h3>
-<div class="paragraph">
-<p>CUPS queue monitoring in Linux
-Process/Service monitoring in Windows</p>
+<h3 id="use-case-notifications">5.3. Monitoring and sending of notifications</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>CUPS queue monitoring in Linux</p>
+</li>
+<li>
+<p>Process/Service monitoring in Windows</p>
+</li>
+</ul>
 </div>
+</div>
+<div class="sect2">
+<h3 id="use-case-influxdb-datapoint-replication">5.4. InfluxDB data point replication</h3>
+
+</div>
+<div class="sect2">
+<h3 id="use-case-log-tailing-spikex">5.5. Tailing logs using Spike.x</h3>
+
+</div>
+<div class="sect2">
+<h3 id="use-case-log-tailing-nxlog">5.6. Tailing logs using NXlog</h3>
+
 </div>
 </div>
 </div>
@@ -1572,7 +2330,7 @@ task works in Linux, Windows and OS X.</p>
 <i class="fa icon-caution" title="Caution"></i>
 </td>
 <td class="content">
-Spike.x 0.9.0 and Gradle 1.10 does not support Maven profiles. When
+Spike.x 0.9.x and Gradle 1.10 does not support Maven profiles. When
 resolving dependencies you get the following kind of errors:
 </td>
 </tr>
@@ -1614,7 +2372,7 @@ Could not resolve all dependencies for configuration ':spikex-core:provided'.
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2016-02-27 22:06:52 EET
+Last updated 2016-04-17 19:55:36 EEST
 </div>
 </div>
 </body>

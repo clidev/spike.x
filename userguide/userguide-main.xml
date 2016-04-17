@@ -78,7 +78,7 @@ for sending of notifications and for storing of metrics and events in various ba
 </varlistentry>
 </variablelist>
 <caution>
-<simpara>Spike.x 0.9.0 is still in its infancy. It will take some time before it can be
+<simpara>Spike.x 0.9.2 is still in its infancy. It will take some time before it can be
 considered production ready.</simpara>
 </caution>
 <tip>
@@ -123,7 +123,7 @@ of some of the built-in filters:</simpara>
 <simpara>Grok - matches regexps against an event field</simpara>
 </listitem>
 <listitem>
-<simpara>HttpServer - receives events via HTTP (supports collectd wtite-http plugin and Nagios NRDP)</simpara>
+<simpara>HttpServer - receives events via HTTP (supports collectd and Nagios NRDP)</simpara>
 </listitem>
 <listitem>
 <simpara>Batch - creates a batch of events before publishing</simpara>
@@ -302,7 +302,7 @@ Typically one CPU and 1 GB of memory should be adequate for most scenarios. The 
 Please note that Spike.x requires JDK 1.8 or newer. We test Spike.x on the <link xlink:href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Oracle JDK</link> and the <link xlink:href="http://openjdk.java.net">OpenJDK</link>. See the platform instructions below for installation details.</simpara>
 <section xml:id="deployment-models">
 <title>Deployment models</title>
-<simpara>We present InfluxDB and Grafana for storage and visualization in the deployment diagrams below but you could also use
+<simpara>InfluxDB and Grafana are used for storage and visualization in the deployment diagrams below but you could also use
 <link linkend="use-case-elasticsearch-kibana">Elasticsearch and Kibana</link>.</simpara>
 <formalpara>
 <title>Simple deployment diagram</title>
@@ -342,10 +342,10 @@ Any service that exposes the InfluxDB HTTP API should work with Spike.x. The set
 <section xml:id="spike-x-on-linux-os-x-and-freebsd">
 <title>Spike.x on Linux, OS X and FreeBSD</title>
 <simpara>Download the latest Spike.x <literal>JAR</literal> installer from <link xlink:href="https://bintray.com/spikex/generic/installer/view">Bintray</link>.</simpara>
-<programlisting language="shell" linenumbering="unnumbered">wget https://bintray.com/artifact/download/spikex/generic/spikex-0.9.0-installer.jar</programlisting>
-<programlisting language="shell" linenumbering="unnumbered">curl -O https://bintray.com/artifact/download/spikex/generic/spikex-0.9.0-installer.jar</programlisting>
+<programlisting language="shell" linenumbering="unnumbered">wget https://bintray.com/artifact/download/spikex/generic/spikex-0.9.2-installer.jar</programlisting>
+<programlisting language="shell" linenumbering="unnumbered">curl -O https://bintray.com/artifact/download/spikex/generic/spikex-0.9.2-installer.jar</programlisting>
 <simpara>Run the installer and follow the instructions.</simpara>
-<programlisting language="shell" linenumbering="unnumbered">sudo java -jar spikex-0.9.0-installer.jar</programlisting>
+<programlisting language="shell" linenumbering="unnumbered">sudo java -jar spikex-0.9.2-installer.jar</programlisting>
 <simpara>Test that you are able to start Spike.x in the terminal. Spike.x should output that it has deployed all the standard modules successfully.</simpara>
 <programlisting language="shell" linenumbering="unnumbered">cd /var/lib/spikex
 su -c 'bin/spikex' spikex</programlisting>
@@ -606,12 +606,12 @@ Inspect the <literal>events.log</literal> file that&#8217;s stored in the <liter
 <simpara>Spike.x provides the following standard modules that are always available.</simpara>
 <table frame="all" rowsep="1" colsep="1">
 <title>Standard modules</title>
-<?dbhtml table-width="60%"?>
-<?dbfo table-width="60%"?>
-<?dblatex table-width="60%"?>
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
 <tgroup cols="2">
-<colspec colname="col_1" colwidth="128*"/>
-<colspec colname="col_2" colwidth="128*"/>
+<colspec colname="col_1" colwidth="213*"/>
+<colspec colname="col_2" colwidth="213*"/>
 <thead>
 <row>
 <entry align="left" valign="top">Module</entry>
@@ -640,75 +640,771 @@ Inspect the <literal>events.log</literal> file that&#8217;s stored in the <liter
 </table>
 <section xml:id="module-core">
 <title>Core</title>
-<simpara>home-path
-base-path
-data-path
-run-path
-var-path?
-log-path
-conf-path</simpara>
+<simpara>Technically core is not deployed as a Vert.x module. It&#8217;s a library that&#8217;s automatically available to all other modules.</simpara>
+<simpara>Core contains the <literal>Main</literal> class of Spike.x that is used to bootstrap the Vert.x container.</simpara>
+<simpara>The <literal>spikex.home</literal> Java system property should be defined when starting Spike.x.
+The property value is also used for the <literal>vertx.home</literal> property required by the Vert.x container.</simpara>
+<simpara>The following Java system properties are used by Spike.x during bootstrap:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="3">
+<colspec colname="col_1" colwidth="140*"/>
+<colspec colname="col_2" colwidth="140*"/>
+<colspec colname="col_3" colwidth="140*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Property</entry>
+<entry align="left" valign="top">Description</entry>
+<entry align="left" valign="top">Default value</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>spikex.home</simpara></entry>
+<entry align="left" valign="top"><simpara>The home driectory of Spike.x</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>spikex.user</simpara></entry>
+<entry align="left" valign="top"><simpara>The process user name</simpara></entry>
+<entry align="left" valign="top"><simpara>spikex</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>spikex.pidfile</simpara></entry>
+<entry align="left" valign="top"><simpara>The process PID file</simpara></entry>
+<entry align="left" valign="top"><simpara>/var/run/spikex.pid</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>spikex.module.deploy.secs</simpara></entry>
+<entry align="left" valign="top"><simpara>How long to wait (secs) for all modules to be deployed</simpara></entry>
+<entry align="left" valign="top"><simpara>45</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>spikex.module.undeploy.secs</simpara></entry>
+<entry align="left" valign="top"><simpara>How long to wait (secs) for all modules to be undeployed</simpara></entry>
+<entry align="left" valign="top"><simpara>45</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+<simpara>The <literal>Main</literal> class supports the following command line arguments:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="3">
+<colspec colname="col_1" colwidth="140*"/>
+<colspec colname="col_2" colwidth="140*"/>
+<colspec colname="col_3" colwidth="140*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Option</entry>
+<entry align="left" valign="top">Description</entry>
+<entry align="left" valign="top">Default value</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>-conf</simpara></entry>
+<entry align="left" valign="top"><simpara>Directory of configuration files</simpara></entry>
+<entry align="left" valign="top"><simpara>vertx.home/conf</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>-data</simpara></entry>
+<entry align="left" valign="top"><simpara>Directory of data files</simpara></entry>
+<entry align="left" valign="top"><simpara>vertx.home/data</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>-tmp</simpara></entry>
+<entry align="left" valign="top"><simpara>Directory of temporary files</simpara></entry>
+<entry align="left" valign="top"><simpara>vertx.home/tmp</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>-umask</simpara></entry>
+<entry align="left" valign="top"><simpara>Umask used when creating new files</simpara></entry>
+<entry align="left" valign="top"><simpara>022</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>-daemon</simpara></entry>
+<entry align="left" valign="top"><simpara>Start Spike.x as a daemon</simpara></entry>
+<entry align="left" valign="top"><simpara>false</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>-version</simpara></entry>
+<entry align="left" valign="top"><simpara>Output Spike.x version information and exit</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+<simpara>The log directory is defined by the <literal>logback.logdir</literal> Java system property.</simpara>
 <section xml:id="configuration">
 <title>Configuration</title>
-
+<simpara>The <literal>spikex.yaml</literal> is the main configuration file of Spike.x. It simply lists the modules that should be deployed.</simpara>
+<formalpara>
+<title>spikex.yaml</title>
+<para>
+<screen>modules:
+    - { id: io.spikex~spikex-filter~0.9.2 }
+    - { id: io.spikex~spikex-metrics~0.9.2, config: { update-interval: 15000 }}</screen>
+</para>
+</formalpara>
+<simpara>The <literal>update-interval</literal> option defines how often, in milliseconds, the metrics module should update its state.</simpara>
 </section>
 </section>
 <section xml:id="module-filter">
 <title>Filter</title>
+<simpara>The filter module provides all the standard filters that enable Spike.x to perform streaming of events.
+Events can be received using input filters, manipulated using filters that take an input and an output and finally stored in some backend using output filters.</simpara>
+<simpara>Filters and connected together using chains. One chain can contain one or more filters. Filters communicate with each other using <literal>addresses</literal>.
+Filters can have an input address, an output address or both. Events flow from one filter to the next one in a chain.</simpara>
+<simpara>There are two special built-in filters that affect the input or output address of a filter:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="213*"/>
+<colspec colname="col_2" colwidth="213*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Special filter</entry>
+<entry align="left" valign="top">Description</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>%InputAddress</simpara></entry>
+<entry align="left" valign="top"><simpara>Sets the input address of the next filter</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>%OutputAddress</simpara></entry>
+<entry align="left" valign="top"><simpara>Sets the output address of the previous filter</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+<simpara>These special filters enable us to define complex event routing between standard filters.
+A typical case is when you want to have multiple input chains that all output to the same backend.
+You can then define one filter configuration file per input chain and have one configuration file for the output chain.</simpara>
+<section xml:id="event">
+<title>Event</title>
+<simpara>Events produces by filters contain some mandatory fields.
+These fields must always be available in events generated by any standard input filter:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="213*"/>
+<colspec colname="col_2" colwidth="213*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Event field</entry>
+<entry align="left" valign="top">Description</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>@id</simpara></entry>
+<entry align="left" valign="top"><simpara>The UUID of the event</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@host</simpara></entry>
+<entry align="left" valign="top"><simpara>The host identifier - free form string (short string)</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@source</simpara></entry>
+<entry align="left" valign="top"><simpara>The source of the event - free form string (short string)</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@timestamp</simpara></entry>
+<entry align="left" valign="top"><simpara>Event timestamp - the number of milliseconds that have elapsed since 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970, not counting leap seconds.</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@timezone</simpara></entry>
+<entry align="left" valign="top"><simpara>Event timezone - by default UTC</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@type</simpara></entry>
+<entry align="left" valign="top"><simpara>The type of the event - must be one of the predefined event types: metric, notification, batch</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@tags</simpara></entry>
+<entry align="left" valign="top"><simpara>The event tags - free form list of strings</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@chain</simpara></entry>
+<entry align="left" valign="top"><simpara>The event chain - chain name of event</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@priority</simpara></entry>
+<entry align="left" valign="top"><simpara>The event priority or severity - must be on of the pre-defined priorities: low, normal, high</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+<simpara>In addition metric events usually contain these fields:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="213*"/>
+<colspec colname="col_2" colwidth="213*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Event field</entry>
+<entry align="left" valign="top">Description</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>@value</simpara></entry>
+<entry align="left" valign="top"><simpara>The metric event value</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@dsname</simpara></entry>
+<entry align="left" valign="top"><simpara>The metric event datasource name</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@dstype</simpara></entry>
+<entry align="left" valign="top"><simpara>The metric event datasource type - must be one of the pre-defined types: GAUGE, COUNTER, STRING</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@dsprecision</simpara></entry>
+<entry align="left" valign="top"><simpara>The metric event datasource timestamp precision - must be one of the pre-defined types: n, u, ms, s, m, h</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@interval</simpara></entry>
+<entry align="left" valign="top"><simpara>The metric event sampling interval in milliseconds - use "-" if not applicable</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@instance</simpara></entry>
+<entry align="left" valign="top"><simpara>The metric event data instance - use "-" if not applicable</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@subgroup</simpara></entry>
+<entry align="left" valign="top"><simpara>The metric event data subgroup - use "-" if not applicable</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+<simpara>These are mandatory fields for notification events:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="213*"/>
+<colspec colname="col_2" colwidth="213*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Event field</entry>
+<entry align="left" valign="top">Description</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>@title</simpara></entry>
+<entry align="left" valign="top"><simpara>The notification event title or subject - free form string</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@message</simpara></entry>
+<entry align="left" valign="top"><simpara>The notification event message - free form string</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>@destinations</simpara></entry>
+<entry align="left" valign="top"><simpara>The notification event destinations - list of destination addresses</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+</section>
 <section xml:id="configuration-2">
 <title>Configuration</title>
-<simpara>ChainA: filter&#8594;filter&#8594;filter</simpara>
+<simpara>The filter module supports one or more configuration files that start with the <literal>filters</literal> prefix.
+There are many example files in the <literal>conf/examples</literal> directory that you can use as such or with some modifications.</simpara>
+<caution>
+<simpara>The filter module tries to automatically reload a modified configuration file. This might not always succeed.
+Please verify that the modifications were successfully loaded from the <literal>spikex.log</literal> file.</simpara>
+</caution>
+<simpara>Many filters support the <literal>update-interval</literal> configuration option. It defines the interval of a specific filter operation.
+This can be given as an integer of milliseconds or using the following shorthand notation:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="213*"/>
+<colspec colname="col_2" colwidth="213*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Notation</entry>
+<entry align="left" valign="top">Meaning</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>&lt;integer&gt;s</simpara></entry>
+<entry align="left" valign="top"><simpara>Interval in seconds. Example: '10s'</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>&lt;integer&gt;m</simpara></entry>
+<entry align="left" valign="top"><simpara>Interval in minutes. Example: '5m'</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>&lt;integer&gt;h</simpara></entry>
+<entry align="left" valign="top"><simpara>Interval in hours. Example: '1h'</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
 </section>
 </section>
 <section xml:id="module-metrics">
 <title>Metrics</title>
+<simpara>The metrics module publishes resource data about the Spike.x JVM and the operating system.
+This can be useful if you want to monitor Spike.x resource usage.</simpara>
 <section xml:id="configuration-3">
 <title>Configuration</title>
-
+<simpara>There is no configuration file for the metrics module.
+Instead you use the <literal>Metrics</literal> filter to grab the published Spike.x JVM metrics like this:</simpara>
+<screen>filter: 'Metrics',
+config: {
+    update-interval: '60s',
+    metric-selector: 'system.load',
+    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+}</screen>
+<simpara>Please see the <literal>filters-metrics-oshi.yaml</literal> example file for details.</simpara>
 </section>
 </section>
 <section xml:id="module-notifier">
 <title>Notifier</title>
+<simpara>The notifier module can be used to publish notifications to interested parties.
+Currently this module supports sending of notifications to files, email addresses or to flowdock channels.
+It supports templates, schedules, destinations and rules.</simpara>
+<simpara>By default the notifier module listens to the <literal>spikex.notifier</literal> address for events.</simpara>
 <section xml:id="configuration-4">
 <title>Configuration</title>
-
+<simpara>The notifier module reads the <literal>notifier.yaml</literal> configuration file.</simpara>
+<caution>
+<simpara>The notifier module tries to automatically reload a modified configuration file. This might not always succeed.
+Please verify that the modifications were successfully loaded from the <literal>spikex.log</literal> file.</simpara>
+</caution>
 </section>
 </section>
 </chapter>
 <chapter xml:id="filters">
 <title>Filters</title>
+<simpara>In this section we present the configuration options for the standard filters.</simpara>
 <section xml:id="batch">
 <title>Batch</title>
+<simpara>Group events into a batch. The batch is contained in-memory and is not persisted during restarts.
+The batch event contains three fields in addition to the mandatory fields: a type field, the amount of events it contains and a list of events.</simpara>
 <section xml:id="configuration-5">
 <title>Configuration</title>
-
+<table frame="all" rowsep="1" colsep="1">
+<title>Batch filter options</title>
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="3">
+<colspec colname="col_1" colwidth="140*"/>
+<colspec colname="col_2" colwidth="140*"/>
+<colspec colname="col_3" colwidth="140*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Option</entry>
+<entry align="left" valign="top">Description</entry>
+<entry align="left" valign="top">Default</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>update-interval</simpara></entry>
+<entry align="left" valign="top"><simpara>How often to publish the current batch if max batch size has not been reached</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>max-batch-size</simpara></entry>
+<entry align="left" valign="top"><simpara>How many events to capture before publishing the batch</simpara></entry>
+<entry align="left" valign="top"><simpara>1000</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+<formalpara>
+<title>Batch example</title>
+<para>
+<screen>filter: 'Batch',
+config: {
+    update-interval: 500,
+    max-batch-size: 100
+}</screen>
+</para>
+</formalpara>
 </section>
 </section>
 <section xml:id="command">
 <title>Command</title>
+<simpara>Execute a command. Command supports two modes: input and output. In input mode it executes a command and reads the
+command output line-by-line using a DSV line parser. In output mode it passes an event to the standard input of the command.</simpara>
 <section xml:id="configuration-6">
 <title>Configuration</title>
-
+<table frame="all" rowsep="1" colsep="1">
+<title>Command filter options</title>
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="3">
+<colspec colname="col_1" colwidth="140*"/>
+<colspec colname="col_2" colwidth="140*"/>
+<colspec colname="col_3" colwidth="140*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Option</entry>
+<entry align="left" valign="top">Description</entry>
+<entry align="left" valign="top">Default</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>update-interval</simpara></entry>
+<entry align="left" valign="top"><simpara>How often to execute the defined command</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>command</simpara></entry>
+<entry align="left" valign="top"><simpara>The command to execute</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>args</simpara></entry>
+<entry align="left" valign="top"><simpara>The list of command arguments</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>timeout</simpara></entry>
+<entry align="left" valign="top"><simpara>How long in milliseconds to wait for the command to exit</simpara></entry>
+<entry align="left" valign="top"><simpara>2500</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>encoding</simpara></entry>
+<entry align="left" valign="top"><simpara>What character encoding to use when parsing command output</simpara></entry>
+<entry align="left" valign="top"><simpara>UTF-8</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>max-line-count</simpara></entry>
+<entry align="left" valign="top"><simpara>Maximum amount of lines to read from the command output</simpara></entry>
+<entry align="left" valign="top"><simpara>4000</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>skip-lines-start</simpara></entry>
+<entry align="left" valign="top"><simpara>How many lines to skip from the start of the command output before parsing lines</simpara></entry>
+<entry align="left" valign="top"><simpara>0</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>skip-lines-end</simpara></entry>
+<entry align="left" valign="top"><simpara>How many lines to skip from the end of the command output</simpara></entry>
+<entry align="left" valign="top"><simpara>0</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>output-format</simpara></entry>
+<entry align="left" valign="top"><simpara>The output format definition</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>type</simpara></entry>
+<entry align="left" valign="top"><simpara>The output format type</simpara></entry>
+<entry align="left" valign="top"><simpara>dsv</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+<formalpara>
+<title>Command input example</title>
+<para>
+<screen>filter: 'Command',
+config: {
+    update-interval: 5000,
+    command: '/bin/cat',
+    args: [ '/tmp/file.txt' ],
+    output-format: {
+        type: 'dsv'
+    }
+}</screen>
+</para>
+</formalpara>
+<formalpara>
+<title>Command output example</title>
+<para>
+<screen>filter: 'Command',
+config: {
+    command: '/bin/cat',
+    args: [ '/tmp/events.json' ]
+}</screen>
+</para>
+</formalpara>
 </section>
 </section>
 <section xml:id="grok">
 <title>Grok</title>
 <section xml:id="configuration-7">
 <title>Configuration</title>
-
+<formalpara>
+<title>Grok example</title>
+<para>
+<screen>filter: 'Grok',
+config: {
+        patterns: [
+            'file:%{#spikex.conf}/grok/base.grok',
+            'file:%{#spikex.conf}/grok/log.grok'
+        ],
+        input-field: '@message',
+        output-field: '@message',
+        group: {
+            fields: ['class', 'method', 'message', 'thread', 'level',
+                       'year', 'month', 'day', 'hour', 'minute', 'second'],
+            output-field: '@fields'
+        },
+        match-lines: [
+           {
+            pattern: '%{JAVAJBOSS4LOG:line}',
+            tags: ['log', 'java'],
+            ignore: ['JAVALVLCLS']
+           }
+        ],
+        multi-line: {
+            pattern: '%{JAVAEXCEPTION:line}',
+            tags: ['error', 'exception'],
+            segment-field: 'class'
+        }
+    }
+}</screen>
+</para>
+</formalpara>
 </section>
 </section>
 <section xml:id="limit">
 <title>Limit</title>
+<simpara>Limit the amount of events per time unit if a rule is matched. A rule defines
+which events to match, when to match and the event rate limit.</simpara>
 <section xml:id="configuration-8">
 <title>Configuration</title>
+<table frame="all" rowsep="1" colsep="1">
+<title>Limit filter options</title>
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="3">
+<colspec colname="col_1" colwidth="140*"/>
+<colspec colname="col_2" colwidth="140*"/>
+<colspec colname="col_3" colwidth="140*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Option</entry>
+<entry align="left" valign="top">Description</entry>
+<entry align="left" valign="top">Default</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>database-name</simpara></entry>
+<entry align="left" valign="top"><simpara>The name of the limit state database</simpara></entry>
+<entry align="left" valign="top"><simpara>limit.db</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>database-compact-on-startup</simpara></entry>
+<entry align="left" valign="top"><simpara>Flag that controls database compaction on startup</simpara></entry>
+<entry align="left" valign="top"><simpara>true</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>discard-on-mismatch</simpara></entry>
+<entry align="left" valign="top"><simpara>Discard event if rule does not match</simpara></entry>
+<entry align="left" valign="top"><simpara>true</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>schedules</simpara></entry>
+<entry align="left" valign="top"><simpara>The schedules when the rule is active</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>throttles</simpara></entry>
+<entry align="left" valign="top"><simpara>The rate limiting definitions</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>rules</simpara></entry>
+<entry align="left" valign="top"><simpara>The event matching and throttle rules</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+<section xml:id="schedule">
+<title>Schedule</title>
 
+</section>
+<section xml:id="throttle">
+<title>Throttle</title>
+
+</section>
+<section xml:id="rule">
+<title>Rule</title>
+<formalpara>
+<title>Limit example</title>
+<para>
+<screen>filter: 'Limit',
+config: {
+    database-name: 'limit.db',
+    database-compact-on-startup: true,
+    discard-on-mismatch: false,
+    schedules: { anytime: '* * * * *' },
+    throttles: {
+        one-per-15-minutes: {
+            rate: 1,
+            interval: 15,
+            unit: 'min'
+        }
+    },
+    rules: [
+        {
+            match-tag: 'ALARM',
+            schedule: 'anytime',
+            throttle: 'one-per-15-minutes'
+        }
+    ]
+}</screen>
+</para>
+</formalpara>
+</section>
 </section>
 </section>
 <section xml:id="mutate">
 <title>Mutate</title>
+<simpara>Modifies an event by adding or removing fields or tags. Also supports renaming of fields.
+The modification can be done to every event or to specific events based on a rule.</simpara>
 <section xml:id="configuration-9">
 <title>Configuration</title>
+<table frame="all" rowsep="1" colsep="1">
+<title>Mutate filter options</title>
+<?dbhtml table-width="100%"?>
+<?dbfo table-width="100%"?>
+<?dblatex table-width="100%"?>
+<tgroup cols="3">
+<colspec colname="col_1" colwidth="140*"/>
+<colspec colname="col_2" colwidth="140*"/>
+<colspec colname="col_3" colwidth="140*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Option</entry>
+<entry align="left" valign="top">Description</entry>
+<entry align="left" valign="top">Default</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>add-fields</simpara></entry>
+<entry align="left" valign="top"><simpara>Map of fields to add to any event</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>add-tags</simpara></entry>
+<entry align="left" valign="top"><simpara>List of tags to add to any event</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>del-fields</simpara></entry>
+<entry align="left" valign="top"><simpara>Map of fields to remove from any event</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>del-tags</simpara></entry>
+<entry align="left" valign="top"><simpara>List of tags to remove from any event</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>renames</simpara></entry>
+<entry align="left" valign="top"><simpara>Map of renaming definitions</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>modifiers</simpara></entry>
+<entry align="left" valign="top"><simpara>The modifier definitions</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>rules</simpara></entry>
+<entry align="left" valign="top"><simpara>The event matching rules</simpara></entry>
+<entry align="left" valign="top"><simpara>&lt;none&gt;</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+<section xml:id="rename">
+<title>Rename</title>
 
+</section>
+<section xml:id="modifier">
+<title>Modifier</title>
+
+</section>
+<section xml:id="rule-2">
+<title>Rule</title>
+<formalpara>
+<title>Mutate example</title>
+<para>
+<screen>filter: 'Mutate',
+config: {
+    add-fields: {
+        cpu.total: '%{#metric.system.cpu.total.time}',
+        io.total: '%{#metric.system.cpu.total.time}',
+        mem.free: '%{#metric.system.memory.free.perc}',
+        mem.jvm.use: '%{#metric.jvm.memory.perc}',
+        '@type': 'spikex-process-metrics'
+    },
+    add-tags: [ 'system', 'load', 'cpu', 'mem', 'metric' ],
+    modifiers: {
+        low-resource: {
+            add-tags: [ 'ALARM' ],
+            add-fields: { '@alarm': 'low resource' }
+        },
+        no-files-alarm: {
+            add-tags: [ 'ALARM' ],
+            add-fields: { '@alarm': 'no files in directory for last 5 min' }
+        }
+    },
+    rules: [
+        {
+            match-field: 'mem.free',
+            value-lte: 10,
+            modifier: 'low-resource'
+        },
+        {
+            match-field: 'cpu.total',
+            value-gt: 95,
+            modifier: 'low-resource'
+        },
+        {
+            match-tag: 'dir-watcher',
+            match-field: 'dir-name',
+            value-in: [ 'xml-in', 'json-in' ],
+            variables: {
+                        'count': '%{file-count}',
+                        'tm': '%{latest-timestamp}'
+                    },
+            # No files for 5 mins
+            expression: 'if(count = 0 &amp;&amp; #now(-5m) &gt; tm)',
+            modifier: 'no-files-alarm'
+        }
+    ]
+}</screen>
+</para>
+</formalpara>
+</section>
 </section>
 </section>
 <section xml:id="tail">
@@ -797,10 +1493,28 @@ This can be seen as a form of log shipping where we pre-filter the events to onl
 <simpara>Once you have access to the <link xlink:href="https://www.elastic.co/found">hosted service</link> you can <link linkend="installation">install Spike.x</link> on a host that contains the log file to analyze.</simpara>
 <simpara>Next we&#8217;ll configure Spike.x to send some data to Elasticsearch to verify that the hosted service is working.</simpara>
 </section>
-<section xml:id="monitoring-and-sending-of-notifications">
+<section xml:id="use-case-notifications">
 <title>Monitoring and sending of notifications</title>
-<simpara>CUPS queue monitoring in Linux
-Process/Service monitoring in Windows</simpara>
+<itemizedlist>
+<listitem>
+<simpara>CUPS queue monitoring in Linux</simpara>
+</listitem>
+<listitem>
+<simpara>Process/Service monitoring in Windows</simpara>
+</listitem>
+</itemizedlist>
+</section>
+<section xml:id="use-case-influxdb-datapoint-replication">
+<title>InfluxDB data point replication</title>
+
+</section>
+<section xml:id="use-case-log-tailing-spikex">
+<title>Tailing logs using Spike.x</title>
+
+</section>
+<section xml:id="use-case-log-tailing-nxlog">
+<title>Tailing logs using NXlog</title>
+
 </section>
 </chapter>
 <chapter xml:id="troubleshooting">
@@ -822,7 +1536,7 @@ cd spike.x</programlisting>
 task works in Linux, Windows and OS X.</simpara>
 <programlisting language="shell" linenumbering="unnumbered"> ./gradlew izpack launch4j</programlisting>
 <caution>
-<simpara>Spike.x 0.9.0 and Gradle 1.10 does not support Maven profiles. When
+<simpara>Spike.x 0.9.x and Gradle 1.10 does not support Maven profiles. When
 resolving dependencies you get the following kind of errors:</simpara>
 </caution>
 <screen>FAILURE: Build failed with an exception.
