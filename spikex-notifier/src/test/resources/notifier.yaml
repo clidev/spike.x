@@ -2,7 +2,7 @@
 # Spike.x notifier configuration
 # ------------------------------------------------------------------------------
 
-local-address: 'spikex-notifier'
+local-address: 'spikex.notifier'
 
 dispatcher-interval: 500
 dispatcher-batch-size: 10
@@ -14,6 +14,7 @@ database: {
     compact-on-startup: true
 }
 
+# Leave out "file:" scheme for URLs that refer to a local file
 templates: [
     {
         name: 'email',
@@ -31,9 +32,9 @@ templates: [
 ]    
 
 destinations: 
-    - { name: 'helpdesk', addresses: [ 'file:%{#spikex.data}/helpdesk' ] }
-    - { name: 'frontline', addresses: [ 'file:%{#spikex.data}/frontline' ] }
-    - { name: 'file', addresses: [ 'file:%{#spikex.data}/notifications' ] }
+    - { name: 'helpdesk', addresses: [ '%{#spikex.data}/helpdesk' ] }
+    - { name: 'frontline', addresses: [ '%{#spikex.data}/frontline' ] }
+    - { name: 'file', addresses: [ '%{#spikex.data}/notifications' ] }
     - { name: 'itsupport', addresses: [ 'mailto:jdoe@mycompany.com' ] }
     - { name: 'techservice', addresses: [ 'flowdock://api.flowdock.com/flows/my-organization-name/my-flow-name/messages' ] }
 

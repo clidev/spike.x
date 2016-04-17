@@ -29,6 +29,7 @@ import io.spikex.core.helper.Variables;
 import io.spikex.core.util.CronEntry;
 import static io.spikex.core.util.Files.Permission.OWNER_FULL_GROUP_EXEC;
 import io.spikex.core.util.Version;
+import io.spikex.core.util.XXHash32;
 import io.spikex.core.util.resource.TextResource;
 import io.spikex.notifier.NotifierConfig.DestinationDef;
 import io.spikex.notifier.NotifierConfig.TemplateDef;
@@ -44,12 +45,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.mapdb.DB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unbescape.html.HtmlEscape;
@@ -63,10 +64,6 @@ import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
- * TODO implement notification retention (dir(s) with json files under data dir)
- * TODO implement notification storage (store notif in mapdb before sending -
- * HA)
- *
  * @author cli
  */
 public final class Notifier implements Handler<Message<JsonObject>> {
@@ -79,8 +76,9 @@ public final class Notifier implements Handler<Message<JsonObject>> {
     private final Path m_confPath;
     private final String m_user;
 
-    // Notification database
-    private final DB m_db;
+    // Notification queue and map
+    private final Queue<JsonObject> m_queue;
+    private final ConcurrentMap<String, JsonObject> m_map;
 
     // Mustache templates
     private final Map<String, Mustache> m_templates;
@@ -93,17 +91,20 @@ public final class Notifier implements Handler<Message<JsonObject>> {
     private static final String EVENT_FIELD_NOTIF_DANGER = "@danger";
 
     private static final String TEMPLATE_DIR = "template";
+    private static final int HASH_SALT = 0x23881;
 
     private final Logger m_logger = LoggerFactory.getLogger(Notifier.class);
 
     public Notifier(
-            final DB db,
+            final Queue<JsonObject> queue,
+            final ConcurrentMap<String, JsonObject> map,
             final NotifierConfig config,
             final Variables variables,
             final Path confPath,
             final String user) {
 
-        m_db = db;
+        m_queue = queue;
+        m_map = map;
         m_config = config;
         m_variables = variables;
         m_confPath = confPath;
@@ -212,7 +213,7 @@ public final class Notifier implements Handler<Message<JsonObject>> {
         //
         // Find matching rule
         //
-        m_logger.trace("Received: {}", message.body());
+        m_logger.debug("Received: {}", message.body());
         DateTime now = DateTime.now();
         String timezone = now.getZone().getID();
         Map<String, CronEntry> schedules = m_config.getSchedules();
@@ -266,22 +267,29 @@ public final class Notifier implements Handler<Message<JsonObject>> {
                 event.putString(EVENT_FIELD_MESSAGE, writer.toString());
                 event.putArray(EVENT_FIELD_DESTINATIONS, new JsonArray(resolvedDestinations));
 
-                if (!m_db.isClosed()) {
+                if (m_map != null
+                        && m_queue != null) {
 
-                    m_logger.info("Storing notification: {} priority: {} destinations: {} subject: {}",
+                    // Calculate event hash
+                    String hash = XXHash32.hashAsHex(event.toString(), HASH_SALT);
+
+                    m_logger.info("Storing notification: {} priority: {} destinations: {} subject: {} hash: {}",
                             event.getString(EVENT_FIELD_ID, ""),
                             event.getString(EVENT_FIELD_PRIORITY, ""),
                             resolvedDestinations,
-                            subject);
+                            subject,
+                            hash);
 
-                    BlockingQueue<String> queue = m_db.getQueue(NotifierConfig.queueName());
-                    queue.add(event.toString());
-                    m_db.commit();
+                    if (m_map.putIfAbsent(hash, event) == null) {
+                        m_queue.add(event);
+                    } else {
+                        m_logger.info("Ignoring duplicate event: {}", hash);
+                    }
 
                 } else {
                     // Log event
-                    m_logger.error("Notification database is closed. "
-                            + "Could not store event: {}", event.toString());
+                    m_logger.error("Notification map has not been initialized. "
+                            + "Could not handle event: {}", event.toString());
                 }
             }
         }

@@ -34,8 +34,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -52,9 +50,6 @@ import org.vertx.java.core.json.JsonObject;
  * @author cli
  */
 public final class Dispatcher extends AbstractVerticle {
-
-    // Temporary list of events
-    private final List<String> m_events;
 
     // Configuration file
     private NotifierConfig m_config;
@@ -74,10 +69,6 @@ public final class Dispatcher extends AbstractVerticle {
             = DateTimeFormat.forPattern("HHmmssSSS");
 
     private final Logger m_logger = LoggerFactory.getLogger(Dispatcher.class);
-
-    public Dispatcher() {
-        m_events = new ArrayList();
-    }
 
     @Override
     protected void startVerticle() {

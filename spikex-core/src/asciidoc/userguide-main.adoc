@@ -29,7 +29,7 @@ icon:bell[] Event monitoring and sending of notifications::
 * Log and send notifications to interested parties
 * Rule based sending of alarms
 
-CAUTION: Spike.x 0.9.1 is still in its infancy. It will take some time before it can be 
+CAUTION: Spike.x 0.9.2 is still in its infancy. It will take some time before it can be 
 considered production ready.
 
 TIP: We are planning to migrate to http://vertx.io[Vert.x 3] as soon as possible.
@@ -66,7 +66,7 @@ of some of the built-in filters:
 * Mutate - modifies an event
 * Limit - performs event limiting
 * Grok - matches regexps against an event field
-* HttpServer - receives events via HTTP (supports collectd wtite-http plugin and Nagios NRDP)
+* HttpServer - receives events via HTTP (supports collectd and Nagios NRDP)
 * Batch - creates a batch of events before publishing
 * NSQ - publishes or subscribes events to/from NSQ
 * InfluxDB - stores events in InfluxDB 0.10.x or later
@@ -179,7 +179,7 @@ Please note that Spike.x requires JDK 1.8 or newer. We test Spike.x on the http:
 
 === Deployment models
 
-We present InfluxDB and Grafana for storage and visualization in the deployment diagrams below but you could also use 
+InfluxDB and Grafana are used for storage and visualization in the deployment diagrams below but you could also use 
 <<use-case-elasticsearch-kibana,Elasticsearch and Kibana>>.
 
 .Simple deployment diagram
@@ -434,7 +434,7 @@ Please see the <<Troubleshooting>> section if you encounter problems. Usually th
 Spike.x provides the following standard modules that are always available.
 
 .Standard modules
-[width="60%",options="header"]
+[width="100%",options="header"]
 |=======================================================================================
 | Module                         | Description
 | Core (mod-spikex-core)         | Base classes and services
@@ -446,41 +446,411 @@ Spike.x provides the following standard modules that are always available.
 [[module-core]]
 === Core
 
-home-path
-base-path
-data-path
-run-path
-var-path?
-log-path
-conf-path
+Technically core is not deployed as a Vert.x module. It's a library that's automatically available to all other modules.
+
+Core contains the `Main` class of Spike.x that is used to bootstrap the Vert.x container. 
+
+The `spikex.home` Java system property should be defined when starting Spike.x.
+The property value is also used for the `vertx.home` property required by the Vert.x container.
+
+The following Java system properties are used by Spike.x during bootstrap:
+
+[width="100%",options="header"]
+|=======================================================================================
+| Property                    | Description                                       | Default value
+| spikex.home                 | The home driectory of Spike.x                     | <none>
+| spikex.user                 | The process user name                             | spikex
+| spikex.pidfile              | The process PID file                              | /var/run/spikex.pid
+| spikex.module.deploy.secs   | How long to wait (secs) for all modules to be deployed   | 45
+| spikex.module.undeploy.secs | How long to wait (secs) for all modules to be undeployed | 45
+|=======================================================================================
+
+The `Main` class supports the following command line arguments:
+
+[width="100%",options="header"]
+|=======================================================================================
+| Option           | Description                                   | Default value
+| -conf            | Directory of configuration files              | vertx.home/conf
+| -data            | Directory of data files                       | vertx.home/data
+| -tmp             | Directory of temporary files                  | vertx.home/tmp
+| -umask           | Umask used when creating new files            | 022 
+| -daemon          | Start Spike.x as a daemon                     | false
+| -version         | Output Spike.x version information and exit   | <none>
+|=======================================================================================
+
+The log directory is defined by the `logback.logdir` Java system property.
 
 ==== Configuration
+
+The `spikex.yaml` is the main configuration file of Spike.x. It simply lists the modules that should be deployed.
+
+.spikex.yaml
+[source]
+----
+modules:
+    - { id: io.spikex~spikex-filter~0.9.2 }
+    - { id: io.spikex~spikex-metrics~0.9.2, config: { update-interval: 15000 }}
+----
+
+The `update-interval` option defines how often, in milliseconds, the metrics module should update its state.
 
 [[module-filter]]
 === Filter
+
+The filter module provides all the standard filters that enable Spike.x to perform streaming of events. 
+Events can be received using input filters, manipulated using filters that take an input and an output and finally stored in some backend using output filters.
+
+Filters and connected together using chains. One chain can contain one or more filters. Filters communicate with each other using `addresses`. 
+Filters can have an input address, an output address or both. Events flow from one filter to the next one in a chain.
+
+There are two special built-in filters that affect the input or output address of a filter:
+
+[width="100%",options="header"]
+|=======================================================================================
+| Special filter   | Description
+| %InputAddress    | Sets the input address of the next filter
+| %OutputAddress   | Sets the output address of the previous filter
+|=======================================================================================
+
+These special filters enable us to define complex event routing between standard filters. 
+A typical case is when you want to have multiple input chains that all output to the same backend. 
+You can then define one filter configuration file per input chain and have one configuration file for the output chain.
+
+==== Event
+
+Events produces by filters contain some mandatory fields. 
+These fields must always be available in events generated by any standard input filter:
+
+[width="100%",options="header"]
+|=======================================================================================
+| Event field      | Description
+| @id              | The UUID of the event
+| @host            | The host identifier - free form string (short string)
+| @source          | The source of the event - free form string (short string)
+| @timestamp       | Event timestamp - the number of milliseconds that have elapsed since 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970, not counting leap seconds.
+| @timezone        | Event timezone - by default UTC
+| @type            | The type of the event - must be one of the predefined event types: metric, notification, batch
+| @tags            | The event tags - free form list of strings
+| @chain           | The event chain - chain name of event
+| @priority        | The event priority or severity - must be on of the pre-defined priorities: low, normal, high
+|=======================================================================================
+
+In addition metric events usually contain these fields:
+
+[width="100%",options="header"]
+|=======================================================================================
+| Event field      | Description
+| @value           | The metric event value
+| @dsname          | The metric event datasource name
+| @dstype          | The metric event datasource type - must be one of the pre-defined types: GAUGE, COUNTER, STRING
+| @dsprecision     | The metric event datasource timestamp precision - must be one of the pre-defined types: n, u, ms, s, m, h
+| @interval        | The metric event sampling interval in milliseconds - use "-" if not applicable
+| @instance        | The metric event data instance - use "-" if not applicable
+| @subgroup        | The metric event data subgroup - use "-" if not applicable
+|=======================================================================================
+
+These are mandatory fields for notification events:
+
+[width="100%",options="header"]
+|=======================================================================================
+| Event field      | Description
+| @title           | The notification event title or subject - free form string
+| @message         | The notification event message - free form string
+| @destinations    | The notification event destinations - list of destination addresses
+|=======================================================================================
+
 ==== Configuration
 
-ChainA: filter->filter->filter
+The filter module supports one or more configuration files that start with the `filters` prefix. 
+There are many example files in the `conf/examples` directory that you can use as such or with some modifications.
+
+CAUTION: The filter module tries to automatically reload a modified configuration file. This might not always succeed. 
+Please verify that the modifications were successfully loaded from the `spikex.log` file.
+
+Many filters support the `update-interval` configuration option. It defines the interval of a specific filter operation. 
+This can be given as an integer of milliseconds or using the following shorthand notation:
+
+[width="100%",options="header"]
+|=======================================================================================
+| Notation         | Meaning
+| <integer>s       | Interval in seconds. Example: '10s'
+| <integer>m       | Interval in minutes. Example: '5m'
+| <integer>h       | Interval in hours. Example: '1h'
+|=======================================================================================
 
 [[module-metrics]]
 === Metrics
+
+The metrics module publishes resource data about the Spike.x JVM and the operating system. 
+This can be useful if you want to monitor Spike.x resource usage.
+
 ==== Configuration
+
+There is no configuration file for the metrics module. 
+Instead you use the `Metrics` filter to grab the published Spike.x JVM metrics like this:
+
+[source]
+----
+filter: 'Metrics',
+config: {
+    update-interval: '60s',
+    metric-selector: 'system.load',
+    add-tags: [ 'metric', 'spikex-metric-oshi', 'oshi' ]
+}
+----
+
+Please see the `filters-metrics-oshi.yaml` example file for details.
 
 [[module-notifier]]
 === Notifier
+
+The notifier module can be used to publish notifications to interested parties. 
+Currently this module supports sending of notifications to files, email addresses or to flowdock channels.
+It supports templates, schedules, destinations and rules.
+
+By default the notifier module listens to the `spikex.notifier` address for events.
+
 ==== Configuration
 
+The notifier module reads the `notifier.yaml` configuration file.
+
+CAUTION: The notifier module tries to automatically reload a modified configuration file. This might not always succeed. 
+Please verify that the modifications were successfully loaded from the `spikex.log` file.
+
 == Filters
+
+In this section we present the configuration options for the standard filters.
+
 === Batch
+
+Group events into a batch. The batch is contained in-memory and is not persisted during restarts.
+The batch event contains three fields in addition to the mandatory fields: a type field, the amount of events it contains and a list of events.
+
 ==== Configuration
+
+.Batch filter options
+[width="100%",options="header"]
+|===================================================================================================================
+| Option                      | Description                                                                      | Default
+| update-interval             | How often to publish the current batch if max batch size has not been reached    | <none>
+| max-batch-size              | How many events to capture before publishing the batch                           | 1000
+|===================================================================================================================
+
+.Batch example
+[source]
+----
+filter: 'Batch', 
+config: { 
+    update-interval: 500,
+    max-batch-size: 100
+}
+----
+
 === Command
+
+Execute a command. Command supports two modes: input and output. In input mode it executes a command and reads the 
+command output line-by-line using a DSV line parser. In output mode it passes an event to the standard input of the command.
+
 ==== Configuration
+
+.Command filter options
+[width="100%",options="header"]
+|===================================================================================================================
+| Option                      | Description                                                                      | Default
+| update-interval             | How often to execute the defined command                                         | <none>
+| command                     | The command to execute                                                           | <none>
+| args                        | The list of command arguments                                                    | <none>
+| timeout                     | How long in milliseconds to wait for the command to exit                         | 2500
+| encoding                    | What character encoding to use when parsing command output                       | UTF-8
+| max-line-count              | Maximum amount of lines to read from the command output                          | 4000
+| skip-lines-start            | How many lines to skip from the start of the command output before parsing lines | 0
+| skip-lines-end              | How many lines to skip from the end of the command output                        | 0
+| output-format               | The output format definition                                                     | <none>
+| type                        | The output format type                                                           | dsv
+|===================================================================================================================
+
+.Command input example
+[source]
+----
+filter: 'Command', 
+config: { 
+    update-interval: 5000,
+    command: '/bin/cat',
+    args: [ '/tmp/file.txt' ],
+    output-format: {
+        type: 'dsv'
+    }
+}
+----
+
+.Command output example
+[source]
+----
+filter: 'Command', 
+config: { 
+    command: '/bin/cat',
+    args: [ '/tmp/events.json' ]
+}
+----
+
 === Grok
 ==== Configuration
+
+.Grok example
+[source]
+----
+filter: 'Grok', 
+config: { 
+        patterns: [
+            'file:%{#spikex.conf}/grok/base.grok',
+            'file:%{#spikex.conf}/grok/log.grok'
+        ],
+        input-field: '@message',
+        output-field: '@message',
+        group: {
+            fields: ['class', 'method', 'message', 'thread', 'level',
+                       'year', 'month', 'day', 'hour', 'minute', 'second'],
+            output-field: '@fields'
+        },
+        match-lines: [
+           {
+            pattern: '%{JAVAJBOSS4LOG:line}',
+            tags: ['log', 'java'],
+            ignore: ['JAVALVLCLS']
+           }
+        ],
+        multi-line: {
+            pattern: '%{JAVAEXCEPTION:line}',
+            tags: ['error', 'exception'],
+            segment-field: 'class'
+        }
+    }
+}
+----
+
 === Limit
+
+Limit the amount of events per time unit if a rule is matched. A rule defines 
+which events to match, when to match and the event rate limit.
+
 ==== Configuration
+
+.Limit filter options
+[width="100%",options="header"]
+|===================================================================================================================
+| Option                      | Description                                                                      | Default
+| database-name               | The name of the limit state database                                             | limit.db
+| database-compact-on-startup | Flag that controls database compaction on startup                                | true
+| discard-on-mismatch         | Discard event if rule does not match                                             | true
+| schedules                   | The schedules when the rule is active                                            | <none>
+| throttles                   | The rate limiting definitions                                                    | <none>
+| rules                       | The event matching and throttle rules                                            | <none>
+|===================================================================================================================
+
+===== Schedule
+===== Throttle
+===== Rule
+
+.Limit example
+[source]
+----
+filter: 'Limit', 
+config: { 
+    database-name: 'limit.db',
+    database-compact-on-startup: true,
+    discard-on-mismatch: false,
+    schedules: { anytime: '* * * * *' },
+    throttles: {
+        one-per-15-minutes: {
+            rate: 1,
+            interval: 15,
+            unit: 'min'
+        }
+    },
+    rules: [
+        {
+            match-tag: 'ALARM',
+            schedule: 'anytime',
+            throttle: 'one-per-15-minutes'
+        }
+    ] 
+}
+----
+
 === Mutate
+
+Modifies an event by adding or removing fields or tags. Also supports renaming of fields.
+The modification can be done to every event or to specific events based on a rule.
+
 ==== Configuration
+
+.Mutate filter options
+[width="100%",options="header"]
+|===================================================================================================================
+| Option                      | Description                                                                      | Default
+| add-fields                  | Map of fields to add to any event                                                | <none>
+| add-tags                    | List of tags to add to any event                                                 | <none>
+| del-fields                  | Map of fields to remove from any event                                           | <none>
+| del-tags                    | List of tags to remove from any event                                            | <none>
+| renames                     | Map of renaming definitions                                                      | <none>
+| modifiers                   | The modifier definitions                                                         | <none>
+| rules                       | The event matching rules                                                         | <none>
+|===================================================================================================================
+
+===== Rename
+===== Modifier
+===== Rule
+
+.Mutate example
+[source]
+----
+filter: 'Mutate', 
+config: { 
+    add-fields: { 
+        cpu.total: '%{#metric.system.cpu.total.time}',
+        io.total: '%{#metric.system.cpu.total.time}',
+        mem.free: '%{#metric.system.memory.free.perc}',
+        mem.jvm.use: '%{#metric.jvm.memory.perc}',
+        '@type': 'spikex-process-metrics'
+    },
+    add-tags: [ 'system', 'load', 'cpu', 'mem', 'metric' ],
+    modifiers: {
+        low-resource: {
+            add-tags: [ 'ALARM' ],
+            add-fields: { '@alarm': 'low resource' }
+        },
+        no-files-alarm: {
+            add-tags: [ 'ALARM' ],
+            add-fields: { '@alarm': 'no files in directory for last 5 min' }
+        }
+    },
+    rules: [
+        { 
+            match-field: 'mem.free',
+            value-lte: 10,
+            modifier: 'low-resource'
+        },
+        {
+            match-field: 'cpu.total',
+            value-gt: 95,
+            modifier: 'low-resource'
+        },
+        {
+            match-tag: 'dir-watcher',
+            match-field: 'dir-name',
+            value-in: [ 'xml-in', 'json-in' ],
+            variables: {
+                        'count': '%{file-count}',
+                        'tm': '%{latest-timestamp}'
+                    },
+            # No files for 5 mins
+            expression: 'if(count = 0 && #now(-5m) > tm)',
+            modifier: 'no-files-alarm'
+        }
+    ]
+}
+----
+
 === Tail
 ==== Configuration
 === Http
@@ -551,10 +921,20 @@ Once you have access to the https://www.elastic.co/found[hosted service] you can
 
 Next we'll configure Spike.x to send some data to Elasticsearch to verify that the hosted service is working. 
 
+[[use-case-notifications]]
 === Monitoring and sending of notifications
 
-CUPS queue monitoring in Linux
-Process/Service monitoring in Windows
+* CUPS queue monitoring in Linux
+* Process/Service monitoring in Windows
+
+[[use-case-influxdb-datapoint-replication]]
+=== InfluxDB data point replication
+
+[[use-case-log-tailing-spikex]]
+=== Tailing logs using Spike.x
+
+[[use-case-log-tailing-nxlog]]
+=== Tailing logs using NXlog
 
 == Troubleshooting
 

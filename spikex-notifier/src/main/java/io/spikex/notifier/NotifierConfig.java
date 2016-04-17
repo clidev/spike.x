@@ -43,9 +43,14 @@ public final class NotifierConfig extends AbstractConfig {
     private String m_localAddress;
     private long m_dispatcherInterval;
     private int m_dispatcherBatchSize;
+    private int m_entryTimeToLive;
+    private int m_maxMapSize;
+    private int m_maxQueueSize;
+    private int m_queueMemoryLimit;
+    private int m_queueBulkLoad;
+    private int m_queueBackupCount;
     private boolean m_mailHtmlEscape;
     private boolean m_fileHtmlUnescape;
-    private DatabaseDef m_databaseDef;
     private EmailDef m_emailDef;
     private FlowdockDef m_flowdockDef;
 
@@ -66,11 +71,15 @@ public final class NotifierConfig extends AbstractConfig {
     private static final String CONF_KEY_ADDRESSES = "addresses";
     private static final String CONF_KEY_CRONLINE = "cronline";
     private static final String CONF_KEY_RULES = "rules";
-    private static final String CONF_KEY_PASSWORD = "password";
-    private static final String CONF_KEY_COMPACT = "compact-on-startup";
-    private static final String CONF_KEY_DATABASE = "database";
+    private static final String CONF_KEY_ENTRY_TIME_TO_LIVE = "entry-ttl";
+    private static final String CONF_KEY_MAX_MAP_SIZE = "max-map-size";
+    private static final String CONF_KEY_MAX_QUEUE_SIZE = "max-queue-size";
+    private static final String CONF_KEY_QUEUE_BACKUP_COUNT = "queue-backup-count";
     private static final String CONF_KEY_EMAIL = "email";
     private static final String CONF_KEY_FLOWDOCK = "flowdock";
+
+    public static final String CONF_KEY_QUEUE_MEMORY_LIMIT = "memory-limit";
+    public static final String CONF_KEY_QUEUE_BULK_LOAD = "bulk-load";
 
     //
     // Email configuration fields
@@ -96,12 +105,15 @@ public final class NotifierConfig extends AbstractConfig {
     //
     // Default configuration values
     //
-    private static final String DEF_DB_NAME = "notifier.db";
-    private static final String DEF_DB_PASSWORD = "J01Ak9iW35+00D";
-    private static final Boolean DEF_DB_COMPACT = Boolean.TRUE;
     private static final String DEF_LOCAL_ADDRESS = "spikex.notifier";
     private static final long DEF_DISPATCHER_INTERVAL = 1000L;
     private static final int DEF_DISPATCHER_BATCH_SIZE = 10;
+    private static final int DEF_ENTRY_TIME_TO_LIVE = 300; // 5 min
+    private static final int DEF_MAX_MAP_SIZE = 5000;
+    private static final int DEF_MAX_QUEUE_SIZE = 1000;
+    private static final int DEF_QUEUE_MEMORY_LIMIT = 1000;
+    private static final int DEF_QUEUE_BULK_LOAD = 250;
+    private static final int DEF_QUEUE_BACKUP_COUNT = 1;
     private static final boolean DEF_DISPATCHER_MAIL_HTML_ESCAPE = true;
     private static final boolean DEF_DISPATCHER_FILE_HTML_UNESCAPE = true;
 
@@ -117,6 +129,12 @@ public final class NotifierConfig extends AbstractConfig {
         m_schedules = new HashMap();
         m_dispatcherInterval = -1L;
         m_dispatcherBatchSize = -1;
+        m_entryTimeToLive = -1;
+        m_maxMapSize = -1;
+        m_maxQueueSize = -1;
+        m_queueMemoryLimit = -1;
+        m_queueBulkLoad = -1;
+        m_queueBackupCount = -1;
         m_mailHtmlEscape = false;
         m_fileHtmlUnescape = false;
     }
@@ -145,6 +163,30 @@ public final class NotifierConfig extends AbstractConfig {
         return m_fileHtmlUnescape;
     }
 
+    public int getEntryTimeToLive() {
+        return m_entryTimeToLive;
+    }
+
+    public int getMaxMapSize() {
+        return m_maxMapSize;
+    }
+
+    public int getMaxQueueSize() {
+        return m_maxQueueSize;
+    }
+
+    public int getQueueMemoryLimit() {
+        return m_queueMemoryLimit;
+    }
+
+    public int getQueueBulkLoad() {
+        return m_queueBulkLoad;
+    }
+
+    public int getQueueBackupCount() {
+        return m_queueBackupCount;
+    }
+
     public List<Rule> getRules() {
         return m_rules;
     }
@@ -159,10 +201,6 @@ public final class NotifierConfig extends AbstractConfig {
 
     public Map<String, CronEntry> getSchedules() {
         return m_schedules;
-    }
-
-    public DatabaseDef getDatabaseDef() {
-        return m_databaseDef;
     }
 
     public EmailDef getEmailDef() {
@@ -191,6 +229,24 @@ public final class NotifierConfig extends AbstractConfig {
             m_dispatcherBatchSize = conf.getValue(CONF_KEY_DISPATCHER_BATCH_SIZE,
                     DEF_DISPATCHER_BATCH_SIZE);
 
+            m_entryTimeToLive = conf.getValue(CONF_KEY_ENTRY_TIME_TO_LIVE,
+                    DEF_ENTRY_TIME_TO_LIVE);
+
+            m_maxMapSize = conf.getValue(CONF_KEY_MAX_MAP_SIZE,
+                    DEF_MAX_MAP_SIZE);
+
+            m_maxQueueSize = conf.getValue(CONF_KEY_MAX_QUEUE_SIZE,
+                    DEF_MAX_QUEUE_SIZE);
+
+            m_queueMemoryLimit = conf.getValue(CONF_KEY_QUEUE_MEMORY_LIMIT,
+                    DEF_QUEUE_MEMORY_LIMIT);
+
+            m_queueBulkLoad = conf.getValue(CONF_KEY_QUEUE_BULK_LOAD,
+                    DEF_QUEUE_BULK_LOAD);
+
+            m_queueBackupCount = conf.getValue(CONF_KEY_QUEUE_BACKUP_COUNT,
+                    DEF_QUEUE_BACKUP_COUNT);
+
             m_mailHtmlEscape = conf.getValue(CONF_KEY_DISPATCHER_MAIL_HTML_ESCAPE,
                     DEF_DISPATCHER_MAIL_HTML_ESCAPE);
 
@@ -201,8 +257,6 @@ public final class NotifierConfig extends AbstractConfig {
             buildDestinations(resource);
             buildSchedules(resource);
             buildRules(resource);
-
-            buildDatabaseDef(resource);
             buildEmailDef(resource);
         }
     }
@@ -284,53 +338,10 @@ public final class NotifierConfig extends AbstractConfig {
         }
     }
 
-    private void buildDatabaseDef(final YamlResource resource) {
-        YamlDocument conf = resource.getData().get(0);
-        String name = DEF_DB_NAME;
-        String password = DEF_DB_PASSWORD;
-        boolean compact = DEF_DB_COMPACT;
-        if (conf.hasKey(CONF_KEY_DATABASE)) {
-            YamlDocument dbConf = conf.getDocument(CONF_KEY_DATABASE);
-            name = dbConf.getValue(CONF_KEY_NAME, name);
-            password = dbConf.getValue(CONF_KEY_PASSWORD, password);
-            compact = dbConf.getValue(CONF_KEY_COMPACT, compact);
-        }
-        m_databaseDef = new DatabaseDef(name, password, compact);
-    }
-
     private void buildEmailDef(final YamlResource resource) {
         YamlDocument conf = resource.getData().get(0);
         m_emailDef = new EmailDef(conf.getDocument(CONF_KEY_EMAIL));
         m_flowdockDef = new FlowdockDef(conf.getDocument(CONF_KEY_FLOWDOCK));
-    }
-
-    public static final class DatabaseDef {
-
-        private final String m_name;
-        private final String m_password;
-        private final boolean m_compact;
-
-        private DatabaseDef(
-                final String name,
-                final String password,
-                final boolean compact) {
-
-            m_name = name;
-            m_password = password;
-            m_compact = compact;
-        }
-
-        public String getName() {
-            return m_name;
-        }
-
-        public String getPassword() {
-            return m_password;
-        }
-
-        public boolean getCompact() {
-            return m_compact;
-        }
     }
 
     public static final class TemplateDef {

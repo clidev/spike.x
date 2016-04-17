@@ -2,6 +2,21 @@
 # Spike.x main configuration
 # ------------------------------------------------------------------------------
 
+cluster:
+    enabled: false
+    name: 'io.spikex.cluster'
+    password: '8D68015wedCbWuV'
+
+hazelcast:
+    host-address: [ '127.0.0.1' ]
+    host-port: 5700
+    hots-port-auto-increment: true
+    hots-port-count: 99
+    join-multicast:
+        enabled: true
+        group: '224.2.2.3'
+        port: 54327
+
 modules:
-    - { id: io.spikex~spikex-filter~0.9.1 }
-    - { id: io.spikex~spikex-metrics~0.9.1, config: { update-interval: 15000 }}
+    - { id: io.spikex~spikex-filter~0.9.2 }
+    - { id: io.spikex~spikex-metrics~0.9.2, config: { update-interval: 15000 }}

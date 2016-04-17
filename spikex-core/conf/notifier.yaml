@@ -2,7 +2,7 @@
 # Spike.x notifier configuration
 # ------------------------------------------------------------------------------
 
-local-address: 'spikex-event'
+local-address: 'spikex.event'
 dispatcher-interval: 1000
 
 database: {

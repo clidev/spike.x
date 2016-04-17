@@ -293,7 +293,7 @@ task izpack(dependsOn: [prepareIzpack]) {
                     outfile: "${buildDir}/dist/spikex-${version}-installer.exe",
                     icon: "bin/spikex.ico",
                     dontWrapJar: "false", 
-                    manifest: "${buildDir}/resources/main/spikex-0.9.1-installer.manifest",
+                    manifest: "${buildDir}/resources/main/spikex-0.9.2-installer.manifest",
                     jar: "${buildDir}/dist/spikex-${version}-installer.jar") {
                     jre(minVersion: "1.7.0", 
                         jdkPreference: 'preferJdk')

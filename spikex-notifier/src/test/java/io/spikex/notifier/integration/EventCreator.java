@@ -31,8 +31,9 @@ import static io.spikex.core.helper.Events.EVENT_FIELD_TIMEZONE;
 import static io.spikex.core.helper.Events.EVENT_FIELD_TITLE;
 import static io.spikex.core.helper.Events.EVENT_FIELD_TYPE;
 import static io.spikex.core.helper.Events.EVENT_PRIORITY_NORMAL;
+import static io.spikex.core.helper.Events.TIMEZONE_UTC;
 import io.spikex.core.util.HostOs;
-import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -55,7 +56,7 @@ public class EventCreator {
             final String testName,
             final Map<String, Object> otherFields) {
 
-        Map<String, Object> fields = manfdatoryFields(testName);
+        Map<String, Object> fields = standardFields(testName);
         JsonObject batch = create(testName, fields);
         JsonArray batchEvents = new JsonArray();
         int n = RND.nextInt(100) + 1;
@@ -75,7 +76,7 @@ public class EventCreator {
             final String testName,
             final Map<String, Object> otherFields) {
 
-        Map<String, Object> fields = manfdatoryFields(testName);
+        Map<String, Object> fields = standardFields(testName);
 
         if (otherFields != null) {
             fields.putAll(otherFields);
@@ -84,11 +85,11 @@ public class EventCreator {
         // Test fields
         fields.put("path", "/var/log/catalina.log");
         fields.put("BigNumber", Long.MAX_VALUE);
-        fields.put("arrayOfStuff", new JsonArray(new String[]{"yellow", "blue", "purple"}));
+        fields.put("arrayOfStuff", Arrays.asList(new String[]{"yellow", "blue", "purple"}));
         fields.put("Light1OnOff", Boolean.TRUE);
-        JsonObject json = new JsonObject();
-        json.putNumber("int", Integer.MIN_VALUE);
-        fields.put("mapOfStuff", json);
+        Map<String, Object> intMap = new HashMap();
+        intMap.put("int", Integer.MIN_VALUE);
+        fields.put("mapOfStuff", intMap);
 
         StringBuilder title = new StringBuilder();
         title.append(fields.get(EVENT_FIELD_TYPE));
@@ -104,7 +105,7 @@ public class EventCreator {
         return new JsonObject(fields);
     }
 
-    private static Map<String, Object> manfdatoryFields(final String testName) {
+    private static Map<String, Object> standardFields(final String testName) {
 
         Map<String, Object> fields = new HashMap();
 
@@ -113,9 +114,15 @@ public class EventCreator {
         fields.put(EVENT_FIELD_SOURCE, testName);
         fields.put(EVENT_FIELD_HOST, HostOs.hostName());
         fields.put(EVENT_FIELD_TIMESTAMP, System.currentTimeMillis());
-        fields.put(EVENT_FIELD_TIMEZONE, ZoneId.systemDefault().getId());
-        fields.put(EVENT_FIELD_TYPE, "MIX");
-        fields.put(EVENT_FIELD_TAGS, new String[]{"spikex", testName});
+        try {
+            // Cause slight pause to get unique ms timestamps
+            Thread.sleep(2L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+        fields.put(EVENT_FIELD_TIMEZONE, TIMEZONE_UTC.getId());
+        fields.put(EVENT_FIELD_TYPE, "Event");
+        fields.put(EVENT_FIELD_TAGS, Arrays.asList(new String[]{"spikex", testName}));
         fields.put(EVENT_FIELD_PRIORITY, EVENT_PRIORITY_NORMAL); // Default
         fields.put(EVENT_FIELD_MESSAGE,
                 "08.11.2010 1:06:46 org.apache.coyote.http11.Http11AprProtocol start\n"

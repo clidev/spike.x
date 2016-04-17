@@ -20,9 +20,12 @@ package io.spikex.core;
 import com.eaio.uuid.UUID;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import io.spikex.core.helper.Variables;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vertx.java.core.Handler;
@@ -240,6 +243,18 @@ public abstract class AbstractVerticle extends Verticle {
         }
 
         return vars;
+    }
+
+    protected final HazelcastInstance hazelcastInstance() {
+        //
+        // Retrieve hazelcast used by Vert.x (first instance)
+        //
+        Set<HazelcastInstance> hzInstances = Hazelcast.getAllHazelcastInstances();
+        if (hzInstances != null && hzInstances.size() > 0) {
+            return hzInstances.iterator().next();
+        } else {
+            return null;
+        }
     }
 
     protected Variables createVariables() {

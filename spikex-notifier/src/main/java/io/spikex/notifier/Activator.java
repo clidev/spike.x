@@ -19,21 +19,31 @@ package io.spikex.notifier;
 
 import com.google.common.base.Strings;
 import com.google.common.eventbus.Subscribe;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
 import io.spikex.core.AbstractActivator;
 import io.spikex.core.helper.Commands;
 import io.spikex.core.util.NioDirWatcher;
-import io.spikex.notifier.NotifierConfig.DatabaseDef;
-import java.io.File;
+import static io.spikex.notifier.NotifierConfig.CONF_KEY_QUEUE_BULK_LOAD;
+import static io.spikex.notifier.NotifierConfig.CONF_KEY_QUEUE_MEMORY_LIMIT;
+import io.spikex.notifier.internal.HzEventListener;
+import io.spikex.notifier.internal.SimpleQueueStore;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-import org.mapdb.Serializer;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonArray;
@@ -55,8 +65,11 @@ public final class Activator extends AbstractActivator {
     // Deployment ID of dispatcher
     private String m_deploymentId;
 
-    // Notification database
-    private DB m_db;
+    // Distributed notification queue (persisted to disk)
+    private IQueue<JsonObject> m_queueNotifs;
+
+    // Distributed map to prevent duplicate handling (in-memory only)
+    private IMap<String, JsonObject> m_handledNotifs;
 
     // Dispatching timer
     private long m_timerId;
@@ -81,31 +94,48 @@ public final class Activator extends AbstractActivator {
         }
 
         //
-        // Initialize local database
+        // Initialize distributed notification queue and map
         //
-        try {
-            DatabaseDef dbDef = m_config.getDatabaseDef();
-            String dbPassword = dbDef.getPassword();
-            File dbFile = new File(dataPath().toFile(), dbDef.getName());
-            m_db = openDatabase(dbFile, dbPassword);
-
-            // Create queue (if not created already)
-            if (!m_db.exists(NotifierConfig.queueName())) {
-                m_db.createQueue(
-                        NotifierConfig.queueName(),
-                        Serializer.STRING,
-                        false);
-                m_db.commit();
-            }
-
-            // Compact on startup by default
-            if (m_config.getDatabaseDef().getCompact()) {
-                compactDatabase(m_db);
-            }
-
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to initialize notification database", e);
+        HazelcastInstance hzInstance = hazelcastInstance();
+        logger().info("Initializing distributed notification map");
+        Config hzConfig = new Config();
+        if (hzInstance != null) {
+            hzConfig = hzInstance.getConfig(); // Grab config template
         }
+
+        MapConfig mapConfig = new MapConfig("notifier");
+        mapConfig.setInMemoryFormat(InMemoryFormat.BINARY);
+        mapConfig.setBackupCount(1);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        mapConfig.setTimeToLiveSeconds(m_config.getEntryTimeToLive());
+        mapConfig.setMaxSizeConfig(new MaxSizeConfig(m_config.getMaxMapSize(), MaxSizePolicy.PER_NODE));
+        hzConfig.addMapConfig(mapConfig);
+
+        logger().info("Initializing distributed and persistent notification queue");
+        QueueConfig queueConfig = new QueueConfig("notifier");
+        queueConfig.setMaxSize(m_config.getMaxQueueSize());
+        queueConfig.setBackupCount(m_config.getQueueBackupCount());
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        queueStoreConfig.setEnabled(true);
+        queueStoreConfig.setProperty(CONF_KEY_QUEUE_MEMORY_LIMIT,
+                String.valueOf(m_config.getQueueMemoryLimit()));
+        queueStoreConfig.setProperty(CONF_KEY_QUEUE_BULK_LOAD,
+                String.valueOf(m_config.getQueueBulkLoad()));
+        queueStoreConfig.setStoreImplementation(
+                new SimpleQueueStore(dataPath(), config().getString(CONF_KEY_USER)));
+        queueConfig.setQueueStoreConfig(queueStoreConfig);
+        hzConfig.addQueueConfig(queueConfig);
+
+        // Use available or create new instance
+        HzEventListener listener = new HzEventListener();
+        hzInstance = Hazelcast.newHazelcastInstance(hzConfig);
+        hzInstance.getCluster().addMembershipListener(listener);
+
+        m_handledNotifs = hzInstance.getMap("notifier");
+        m_handledNotifs.addEntryListener(listener, false); // Listen to entry events
+
+        m_queueNotifs = hzInstance.getQueue("notifier");
+        m_queueNotifs.addItemListener(listener, true); // Listen to item events
 
         //
         // Create and initialize notifier
@@ -130,12 +160,6 @@ public final class Activator extends AbstractActivator {
             throw new IllegalStateException("Failed to watch directory: "
                     + confPath(), e);
         }
-    }
-
-    @Override
-    protected void stopVerticle() {
-        // Close database
-        closeDatabase(m_db);
     }
 
     @Override
@@ -219,18 +243,16 @@ public final class Activator extends AbstractActivator {
 
     private void dispatchEvents() {
         //
-        // Read next batch of events from queue (if any)
+        // Read next batch of events from map (if any)
         //
-        if (!m_db.isClosed()) {
+        if (m_handledNotifs != null
+                && m_queueNotifs != null) {
 
-            BlockingQueue<String> queue = m_db.getQueue(NotifierConfig.queueName());
-            List<String> events = new ArrayList();
-            queue.drainTo(events, m_config.getDispatcherBatchSize());
+            List<JsonObject> events = new ArrayList();
+            m_queueNotifs.drainTo(events, m_config.getDispatcherBatchSize());
 
             JsonArray jsonEvents = new JsonArray();
-            for (String json : events) {
-
-                JsonObject event = new JsonObject(json);
+            for (JsonObject event : events) {
                 jsonEvents.add(event);
             }
 
@@ -275,52 +297,19 @@ public final class Activator extends AbstractActivator {
                 handler);
     }
 
-    private DB openDatabase(
-            final File file,
-            final String password) {
-
-        return DBMaker.newFileDB(file)
-                .closeOnJvmShutdown()
-                .checksumEnable()
-                .compressionEnable()
-                .encryptionEnable(password)
-                .transactionDisable()
-                .make();
-    }
-
-    private void closeDatabase(final DB database) {
-        // Close database
-        if (database != null
-                && !database.isClosed()) {
-            database.commit();
-            database.close();
-        }
-    }
-
-    private void compactDatabase(final DB database) {
-        if (database != null
-                && !database.isClosed()) {
-            logger().debug("Compacting notifier buffer database");
-            database.compact();
-        }
-    }
-
     private void createAndInitNotifier() {
         //
         // Unregister local listener and stop notifier
         //
         if (m_notifier != null) {
             m_notifier.stop(eventBus());
-            //
-            // Compact database...
-            //
-            compactDatabase(m_db);
         }
         //
         // Create notifier (and possibly listen on another address)
         //
         m_notifier = new Notifier(
-                m_db,
+                m_queueNotifs,
+                m_handledNotifs,
                 m_config,
                 variables(),
                 confPath(),
