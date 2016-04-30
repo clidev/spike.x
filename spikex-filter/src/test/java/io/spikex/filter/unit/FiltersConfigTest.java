@@ -56,7 +56,8 @@ public class FiltersConfigTest {
         {"Nsq.out", "io.spikex.filter.output.Nsq"},
         {"NsqHttp.out", "io.spikex.filter.output.NsqHttp"},
         {"Es.out", "io.spikex.filter.output.Elasticsearch"},
-        {"InfluxDB.out", "io.spikex.filter.output.InfluxDb"}
+        {"InfluxDB.out", "io.spikex.filter.output.InfluxDb"},
+        {"Ubidots.out", "io.spikex.filter.output.Ubidots"}    
     };
 
     @Test

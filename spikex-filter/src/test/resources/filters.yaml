@@ -336,14 +336,6 @@ chains: [
                             datasource: 'Spike.x',
                             time-field: '@timestamp',
                             value-field: '@value'
-                        },
-                        {
-                            name: 'thingsee.speed.gps',
-                            description: 'Spike.x variable',
-                            unit: 'km/h',
-                            datasource: 'Spike.x',
-                            time-field: '@timestamp',
-                            value-field: '@value'
                         }
                     ],
                     contexts: [
