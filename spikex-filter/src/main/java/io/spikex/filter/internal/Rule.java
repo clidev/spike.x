@@ -324,6 +324,13 @@ public final class Rule {
     private boolean matchEventValue(final Object eventValue) {
         boolean match = false;
         Object value = m_value;
+
+        // Just matching field name - no constraint or value given
+        if (m_constraint == -1
+                && value == null) {
+            return true;
+        }
+
         switch (m_constraint) {
 
             // String, date numerical
@@ -476,7 +483,7 @@ public final class Rule {
         } else {
             n2 = String.valueOf(obj);
         }
-        return n1.compareTo(new BigDecimal(n2.toString()));
+        return n1.compareTo(new BigDecimal(n2));
     }
 
     private int compareToDateTime(

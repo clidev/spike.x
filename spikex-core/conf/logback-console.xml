@@ -63,6 +63,9 @@
     <!-- Suppress OSHI file store debug logging -->
     <logger name="oshi.software.os.OSFileStore" level="INFO"/>
 
+    <!-- Suppress OSHI filesystem debug logging -->
+    <logger name="oshi.util.FileUtil" level="INFO"/>
+
     <root level="DEBUG">
         <appender-ref ref="SPIKEX-ASYNC0"/>
         <appender-ref ref="STDOUT"/>

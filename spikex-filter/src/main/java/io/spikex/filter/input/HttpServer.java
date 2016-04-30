@@ -24,6 +24,7 @@ import io.spikex.core.util.HostOs;
 import io.spikex.filter.internal.CollectdJsonHandler;
 import io.spikex.filter.internal.HttpResponse;
 import io.spikex.filter.internal.NagiosNrdpHandler;
+import io.spikex.filter.internal.ThingseeHandler;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.AsyncResultHandler;
 import org.vertx.java.core.Handler;
@@ -62,6 +63,7 @@ public final class HttpServer extends AbstractFilter {
     private static final String INPUT_FORMAT_JSON = "json";
     private static final String INPUT_FORMAT_COLLECTD_JSON = "collectd-json";
     private static final String INPUT_FORMAT_NAGIOS_NRDP = "nagios-nrdp";
+    private static final String INPUT_FORMAT_THINGSEE = "thingsee";
 
     // Configuration defaults
     private static final int DEF_PORT = 44120;
@@ -92,6 +94,11 @@ public final class HttpServer extends AbstractFilter {
             case INPUT_FORMAT_NAGIOS_NRDP: {
                 NagiosNrdpHandler handler = new NagiosNrdpHandler(this, config(), eventBus(), tags);
                 handler.init();
+                m_handler = handler;
+            }
+            break;
+            case INPUT_FORMAT_THINGSEE: {
+                ThingseeHandler handler = new ThingseeHandler(this, config(), eventBus(), tags);
                 m_handler = handler;
             }
             break;

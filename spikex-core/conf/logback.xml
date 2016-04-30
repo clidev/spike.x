@@ -53,6 +53,12 @@
 
     <!-- Suppress Vert.x WindowsFileSystem "POSIX style file permissions are not supported" logging -->
     <logger name="org.vertx.java.core.file.impl.WindowsFileSystem" level="INFO"/>
+
+    <!-- Suppress OSHI file store debug logging -->
+    <logger name="oshi.software.os.OSFileStore" level="INFO"/>
+
+    <!-- Suppress OSHI filesystem debug logging -->
+    <logger name="oshi.util.FileUtil" level="INFO"/>
     
     <root level="INFO">
         <appender-ref ref="SPIKEX-ASYNC0"/>

@@ -1,0 +1,172 @@
+/**
+ *
+ * Copyright (c) 2016 NG Modular Oy.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+package io.spikex.filter.integration;
+
+import com.eaio.uuid.UUID;
+import static io.spikex.core.AbstractFilter.CONF_KEY_CHAIN_NAME;
+import static io.spikex.core.AbstractFilter.CONF_KEY_SOURCE_ADDRESS;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_CLUSTER_NAME;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_CONF_PATH;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_DATA_PATH;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_HOME_PATH;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_LOCAL_ADDRESS;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_NODE_NAME;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_TMP_PATH;
+import static io.spikex.core.AbstractVerticle.CONF_KEY_USER;
+import io.spikex.core.util.HostOs;
+import io.spikex.core.util.resource.ResourceException;
+import io.spikex.filter.internal.FiltersConfig;
+import io.spikex.filter.output.Ubidots;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import junit.framework.Assert;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.AsyncResultHandler;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonObject;
+import org.vertx.testtools.TestVerticle;
+import org.vertx.testtools.VertxAssert;
+
+/**
+ *
+ * @author cli
+ */
+public class UbidotsTest extends TestVerticle implements Handler<Long> {
+
+    private int m_counter;
+    private static final List<JsonObject> m_metrics = new ArrayList();
+
+    private static final String FILTER_UBIDOTS_NAME = "Ubidots.out";
+    private static final String FILTER_SOURCE_ADDRESS = "InputUbidotsFilter." + new UUID().toString();
+    private static final String CONF_NAME = "filters";
+
+    private static final Logger m_logger = LoggerFactory.getLogger(UbidotsTest.class);
+
+    @Test
+    public void testGenerateMessages() throws Exception {
+        JsonObject config = createBaseConfig();
+        config.mergeIn(loadUbidotsConfig(config));
+
+        Path metricsPath = Paths.get("build/resources/test/metrics").toAbsolutePath();
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(metricsPath, "*.json")) {
+            for (Path file : dirStream) {
+                m_logger.debug("Loading file: {}", file);
+                JsonObject json = new JsonObject(loadFileContents(file));
+                m_metrics.add(json);
+            }
+        } catch (IOException e) {
+            m_logger.error("Failed to read metric file(s)", e);
+        }
+
+        container.deployWorkerVerticle(Ubidots.class.getName(), config, 1, false,
+                new AsyncResultHandler<String>() {
+                    @Override
+                    public void handle(final AsyncResult<String> ar) {
+                        if (ar.failed()) {
+                            m_logger.error("Failed to deploy verticle", ar.cause());
+                            Assert.fail();
+                        }
+                    }
+                });
+
+        vertx.setPeriodic(400L, this); // Generate events once every 400 ms
+    }
+
+    @Override
+    public void handle(final Long timerId) {
+        if (m_counter++ > 10) {
+            // Stop test
+            VertxAssert.testComplete();
+        } else {
+            //
+            // Generate test events
+            //
+            for (JsonObject json : m_metrics) {
+                JsonObject event = EventCreator.createBatch("metrics", json.toMap(), 5);
+                vertx.eventBus().publish(FILTER_SOURCE_ADDRESS, event);
+            }
+        }
+    }
+
+    private JsonObject loadUbidotsConfig(final JsonObject baseConfig)
+            throws ResourceException {
+
+        Path confPath = FileSystems.getDefault().getPath(
+                baseConfig.getString(CONF_KEY_CONF_PATH));
+
+        FiltersConfig.FilterDef filterDef = null;
+        FiltersConfig config = new FiltersConfig(CONF_NAME, confPath);
+        config.load();
+        config.logInputOutputDef();
+
+        for (FiltersConfig.ChainDef chain : config.getChains()) {
+            for (FiltersConfig.FilterDef filter : chain.getFilters()) {
+                if (FILTER_UBIDOTS_NAME.equalsIgnoreCase(filter.getAlias())) {
+                    filterDef = filter;
+                    break;
+                }
+            }
+        }
+
+        junit.framework.Assert.assertNotNull("Could not find Ubidots.out filter from " + confPath,
+                filterDef);
+
+        String verticle = filterDef.getVerticle();
+        JsonObject ubidotsConfig = filterDef.getJsonConfig();
+
+        // Input address of filter
+        ubidotsConfig.putString(CONF_KEY_SOURCE_ADDRESS, FILTER_SOURCE_ADDRESS);
+
+        // Filter local address
+        ubidotsConfig.putString(CONF_KEY_LOCAL_ADDRESS, verticle);
+
+        return ubidotsConfig;
+    }
+
+    private JsonObject createBaseConfig() {
+        JsonObject config = new JsonObject();
+        config.putString(CONF_KEY_CHAIN_NAME, "ubidots-test");
+        config.putString(CONF_KEY_LOCAL_ADDRESS, "my-local-address");
+        config.putString(CONF_KEY_NODE_NAME, "node-name");
+        config.putString(CONF_KEY_CLUSTER_NAME, "cluster-name");
+        config.putString(CONF_KEY_HOME_PATH, "build/ubidots");
+        config.putString(CONF_KEY_CONF_PATH, "build/resources/test");
+        config.putString(CONF_KEY_DATA_PATH, "build/ubidots/data");
+        config.putString(CONF_KEY_TMP_PATH, "build/ubidots/tmp");
+        config.putString(CONF_KEY_USER, "spikex");
+        m_logger.info("Host operating system: {}", HostOs.operatingSystemFull());
+        return config;
+    }
+
+    private String loadFileContents(final Path filePath) {
+        try {
+            return new String(Files.readAllBytes(filePath));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

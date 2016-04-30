@@ -21,7 +21,8 @@ modules: [
             { alias: 'Nsq.out', verticle: 'io.spikex.filter.output.Nsq' },
             { alias: 'NsqHttp.out', verticle: 'io.spikex.filter.output.NsqHttp' },
             { alias: 'Es.out', verticle: 'io.spikex.filter.output.Elasticsearch' },
-            { alias: 'InfluxDB.out', verticle: 'io.spikex.filter.output.InfluxDb' }
+            { alias: 'InfluxDB.out', verticle: 'io.spikex.filter.output.InfluxDb' },
+            { alias: 'Ubidots.out', verticle: 'io.spikex.filter.output.Ubidots' }
         ]
     }
 ]
@@ -275,6 +276,84 @@ chains: [
                                         dsname: '%{@dsname}',
                                         dstype: '%{@dstype}'
                             }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        chain: 'output-ubidots',
+        filters: [
+            { '%InputAddress': 'system.limit' },
+            {
+                filter: 'Batch', 
+                config: { 
+                    update-interval: 500,
+                    max-batch-size: 10
+                }
+            },
+            {
+                filter: 'Mutate',
+                config: {
+                    modifiers: {
+                        speed-kmh: {
+                            expression: '%{@value} = %{@value} * 3.6',
+                            add-fields: { '@unit': 'km/h' }
+                        }
+                    },
+                    rules: [
+                        { 
+                            match-field: '@dsname',
+                            value-equals: 'thingsee.speed.gps',
+                            modifier: 'speed-kmh'
+                        }
+                    ]
+                }
+            },
+            {
+                filter: 'Ubidots.out', 
+                config: { 
+                    nodes: [ 'http://things.ubidots.com' ],
+                    ssl-enabled: false,
+                    api-token: 'xiHiElffAbwZW1X0uyTTkdjQ2FhidZ',
+                    datasources: [
+                        {
+                            name: 'Spike.x',
+                            description: 'Spike.x variables'
+                        }
+                    ],
+                    rule: {
+                            match-tag: 'spikex-metric',
+                            match-field: '@dstype',
+                            value-in: [ 'GAUGE', 'DERIVE', 'COUNTER', 'ABSOLUTE' ] # Accept only numerical values (no strings)
+                    },
+                    variables: [
+                        {
+                            name: '%{@dsname}',
+                            description: 'Spike.x variable',
+                            unit: '%{@unit}',
+                            datasource: 'Spike.x',
+                            time-field: '@timestamp',
+                            value-field: '@value'
+                        },
+                        {
+                            name: 'thingsee.speed.gps',
+                            description: 'Spike.x variable',
+                            unit: 'km/h',
+                            datasource: 'Spike.x',
+                            time-field: '@timestamp',
+                            value-field: '@value'
+                        }
+                    ],
+                    contexts: [
+                        {
+                            variable: 'thingsee.speed.gps',
+                            fields: [
+                                { name: 'lat', value: '%{var:thingsee.location.latitude}' },
+                                { name: 'lng', value: '%{var:thingsee.location.longitude}' },
+                                { name: 'status', value: '-' }
+                            ]
                         }
                     ]
                 }

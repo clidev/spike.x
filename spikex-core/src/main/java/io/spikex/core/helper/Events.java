@@ -138,6 +138,11 @@ public final class Events {
     public static final String EVENT_FIELD_SUBGROUP = "@subgroup";
 
     /**
+     * The metric event unit (optional)
+     */
+    public static final String EVENT_FIELD_UNIT = "@unit";
+
+    /**
      * The list of events in a batch
      */
     public static final String EVENT_FIELD_BATCH_EVENTS = "@batch-events";
