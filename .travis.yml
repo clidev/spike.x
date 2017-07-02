@@ -12,4 +12,6 @@ branches:
     - master
 
 script:
-  - ./gradlew clean build
+  - ./gradlew :spikex-core:clean
+  - ./gradlew :spikex-core:build
+  - ./gradlew :spikex-core:install
