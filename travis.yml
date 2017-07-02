@@ -1,3 +1,15 @@
 language: java
-sudo: false
-dist: trusty
+
+jdk:
+  - oraclejdk8
+  - oraclejdk7
+
+os:
+  - linux
+
+branches:
+  only:
+    - master
+
+script:
+  - ./gradlew clean build
