@@ -1,5 +1,3 @@
-https://travis-ci.org/clidev/spike.x.svg?branch=master
-
 # Sense. React. Visualize.
 Reactive event monitoring and data analysis built on top of [Vert.x](http://vertx.io/vertx2).
 Spike.x provides components for resource monitoring, for data filtering and streaming, 
